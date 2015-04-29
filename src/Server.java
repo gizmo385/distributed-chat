@@ -18,6 +18,7 @@ public class Server {
     private static int userId = 0;
     private static int roomId = 0;
     private Map<Integer, ClientHandler> clientConnections;
+    private Map<Integer, Room> rooms;
 
 
     public Server(int portNumber) {
@@ -96,12 +97,18 @@ public class Server {
         }
 
         public void run() {
-            // Block until we recieve a message, then pass that message on to the proper rooms
+            // Block until we recieve a message
             while( true ) {
                 try {
                     Message<?> messageRecieved = (Message<?>)this.readFromClient.readObject();
 
                     // TODO: Distribute message to the rooms
+                    Room destination = rooms.get(messageRecieved.getDestination());
+
+                    for( int userId : destination.getUsers() ) {
+                        ClientHandler client = clientConnections.get(userId);
+                        client.sendMessage(messageRecieved);
+                    }
                 } catch( IOException ioe ) {
                     System.err.printf("Error while reading message from client!\n");
                     ioe.printStackTrace();
