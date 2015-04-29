@@ -14,6 +14,9 @@ public class Server {
     private ServerSocket serverSocket;
     private int portNumber;
 
+    // The room ID for the global chat room
+    public final int GLOBAL_ROOM_ID;
+
     // Clients and rooms on the server
     private static int userIdCounter = 0;
     private static int roomId = 0;
@@ -24,6 +27,7 @@ public class Server {
     public Server(int portNumber) {
         this.portNumber = portNumber;
         this.clientConnections = new HashMap<>();
+        this.rooms = new HashMap<>();
 
         // Bind the server socket
         try {
@@ -32,6 +36,11 @@ public class Server {
             System.err.printf("Error while attempting to open server on port %d\n", portNumber);
             ioe.printStackTrace();
         }
+
+        // Create the global chat room that all users can join
+        Room globalRoom = new Room();
+        GLOBAL_ROOM_ID = globalRoom.getId();
+        this.rooms.put(GLOBAL_ROOM_ID, globalRoom);
     }
 
     /**
@@ -52,9 +61,9 @@ public class Server {
                         MessageType.LOGIN_NOTIFICATION);
 
                 /*
-                * Send login confirmation to the client and begin listening for messages on
-                * a separate thread
-                */
+                 * Send login confirmation to the client and begin listening for messages on
+                 * a separate thread
+                 */
                 client.sendMessage(loginConfirmation);
                 client.start();
 
@@ -66,6 +75,10 @@ public class Server {
                 ioe.printStackTrace();
             }
         }
+    }
+
+    public void joinGlobalRoom(int userId) {
+        this.rooms.get(GLOBAL_ROOM_ID).addUser(userId);
     }
 
     private class ClientHandler extends Thread {
@@ -106,14 +119,29 @@ public class Server {
             // Block until we recieve a message
             while( true ) {
                 try {
+                    // Discover where the user is sending the message to
                     Message<?> messageRecieved = (Message<?>)this.readFromClient.readObject();
-
-                    // TODO: Distribute message to the rooms
                     Room destination = rooms.get(messageRecieved.getDestination());
 
-                    for( int userId : destination.getUsers() ) {
-                        ClientHandler client = clientConnections.get(userId);
-                        client.sendMessage(messageRecieved);
+                    if( destination != null ) {
+                        /*
+                         * If the room the user is sending to exists, distribute the message to all
+                         * users who are currently in that room.
+                         */
+                        for( int userId : destination.getUsers() ) {
+                            ClientHandler client = clientConnections.get(userId);
+                            client.sendMessage(messageRecieved);
+                        }
+                    } else {
+                        /*
+                         * If the user tries to send a message to non-existent room, send them an
+                         * error message in response
+                         */
+                        Message<String> errorMessage = new Message<String>("Server", -1,
+                                String.format("%d is not a valid room id!",
+                                    messageRecieved.getDestination()), MessageType.ERROR);
+
+                        writeToClient.writeObject(errorMessage);
                     }
                 } catch( IOException ioe ) {
                     System.err.printf("Error while reading message from client!\n");
