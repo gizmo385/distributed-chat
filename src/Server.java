@@ -70,6 +70,9 @@ public class Server {
                 // Add the client to the global client table
                 clientConnections.put(client.userId, client);
 
+                // Add the client to the global room
+                joinGlobalRoom(client.userId);
+
             } catch( IOException ioe ) {
                 System.err.printf("Error attempting to accept client on port %d\n", portNumber);
                 ioe.printStackTrace();
