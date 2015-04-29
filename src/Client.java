@@ -86,7 +86,8 @@ public class Client {
         MessageType type = message.getType();
 
         if( this.handlers.containsKey(type) ) {
-            this.handlers.get(type).stream().forEach(h -> h.recieveMessage(message));
+            List<MessageHandler> typeHandlers = this.handlers.get(type);
+            typeHandlers.stream().forEach(h -> h.recieveMessage(message));
         } else {
             System.err.printf("Received message with unhandled type: %s\n", type);
         }
