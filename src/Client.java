@@ -22,9 +22,11 @@ public class Client {
     private ObjectInputStream readFromServer;
 
     // Other information maintained by the client
+    private String clientName;
     private Map<MessageType, List<MessageHandler>> handlers;
 
-    public Client(String hostname, int portNumber) {
+    public Client(String clientName, String hostname, int portNumber) {
+        this.clientName = clientName;
         this.hostname = hostname;
         this.portNumber = portNumber;
         this.handlers = new HashMap<>();
@@ -39,6 +41,12 @@ public class Client {
             ClientReader reader = new ClientReader(this.readFromServer);
             Thread readerThread = new Thread(reader);
             readerThread.start();
+
+            // Send client information to the server
+            Message<String> connectionInfo = new Message<>(clientName, -1, clientName,
+                    MessageType.LOGIN_INFORMATION);
+
+            writeMessage(connectionInfo);
         } catch( UnknownHostException uhe ) {
             System.err.printf("Could not connect to %s:%d\n", hostname, portNumber);
             uhe.printStackTrace();

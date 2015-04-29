@@ -55,23 +55,8 @@ public class Server {
 
                 // Create a handler for that client
                 ClientHandler client = new ClientHandler(newClient);
-
-                // Create a message notifying the client that they have arrived
-                Message<Integer> loginConfirmation = new Message<>("Server", -1, client.userId,
-                        MessageType.LOGIN_NOTIFICATION);
-
-                /*
-                 * Send login confirmation to the client and begin listening for messages on
-                 * a separate thread
-                 */
-                client.sendMessage(loginConfirmation);
                 client.start();
 
-                // Add the client to the global client table
-                clientConnections.put(client.userId, client);
-
-                // Add the client to the global room
-                joinGlobalRoom(client.userId);
 
             } catch( IOException ioe ) {
                 System.err.printf("Error attempting to accept client on port %d\n", portNumber);
@@ -87,6 +72,7 @@ public class Server {
     private class ClientHandler extends Thread {
         // Client information
         public final int userId;
+        public String clientName;
 
         // Socket and stream
         private Socket clientSocket;
@@ -99,8 +85,8 @@ public class Server {
 
             // Open the inputstream on the client
             try {
-                this.readFromClient= new ObjectInputStream(clientSocket.getInputStream());
-                this.writeToClient= new ObjectOutputStream(clientSocket.getOutputStream());
+                this.readFromClient = new ObjectInputStream(clientSocket.getInputStream());
+                this.writeToClient = new ObjectOutputStream(clientSocket.getOutputStream());
             } catch( IOException ioe ) {
                 System.err.printf("Error while opening streams for client!\n");
                 ioe.printStackTrace();
@@ -119,6 +105,33 @@ public class Server {
         }
 
         public void run() {
+            // Wait for the new client to send in their connection information
+            try {
+                Message<?> connectionInfo = (Message<?>)this.readFromClient.readObject();
+                clientName = (String)connectionInfo.getContents();
+            } catch( IOException ioe ) {
+                System.err.printf("Error while getting connection info from the client!\n");
+                ioe.printStackTrace();
+            } catch( ClassNotFoundException cnfe ) {
+                System.err.printf("Connection info did not contain a string!\n");
+                cnfe.printStackTrace();
+            }
+
+            // Create a message notifying the client that they have arrived
+            Message<Integer> loginConfirmation = new Message<>("Server", -1, userId,
+                    MessageType.LOGIN_NOTIFICATION);
+            /*
+             * Send login confirmation to the client and begin listening for messages on
+             * a separate thread
+             */
+            sendMessage(loginConfirmation);
+
+            // Add the client to the global client table
+            clientConnections.put(userId, this);
+
+            // Add the client to the global room
+            joinGlobalRoom(userId);
+
             // Block until we recieve a message
             while( true ) {
                 try {

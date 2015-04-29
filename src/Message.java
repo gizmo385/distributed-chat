@@ -1,6 +1,6 @@
 import java.io.Serializable;
 
-public final class Message<E extends Serializable> {
+public final class Message<E extends Serializable> implements Serializable {
     private final String senderName;
     private final int destinationRoom;
     private final MessageType type;

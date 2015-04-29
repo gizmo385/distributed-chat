@@ -18,6 +18,12 @@ public enum MessageType {
     AUDIO,
 
     /**
+     * This is the type of message sent when a user is authenticating with the server. The payload
+     * of this message is a String, representing the user's client name.
+     */
+    LOGIN_INFORMATION,
+
+    /**
      * This is a message sent by the server that notifies clients that they have logged in
      * successfully. It will send a user ID to the client as well.
      */
