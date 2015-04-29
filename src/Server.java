@@ -15,7 +15,7 @@ public class Server {
     private int portNumber;
 
     // Clients and rooms on the server
-    private static int userId = 0;
+    private static int userIdCounter = 0;
     private static int roomId = 0;
     private Map<Integer, ClientHandler> clientConnections;
     private Map<Integer, Room> rooms;
@@ -44,18 +44,22 @@ public class Server {
                 // Wait until a new client has arrived
                 Socket newClient = serverSocket.accept();
 
+                // Create a handler for that client
+                ClientHandler client = new ClientHandler(newClient);
+
                 // Create a message notifying the client that they have arrived
-                Message<Integer> loginConfirmation = new Message<>("Server", -1, userId,
+                Message<Integer> loginConfirmation = new Message<>("Server", -1, client.userId,
                         MessageType.LOGIN_NOTIFICATION);
 
-                // Create the client handler and send the login confirmation to them
-                ClientHandler client = new ClientHandler(newClient, userId);
+                /*
+                * Send login confirmation to the client and begin listening for messages on
+                * a separate thread
+                */
                 client.sendMessage(loginConfirmation);
                 client.start();
 
                 // Add the client to the global client table
-                clientConnections.put(userId, client);
-                userId++;
+                clientConnections.put(client.userId, client);
 
             } catch( IOException ioe ) {
                 System.err.printf("Error attempting to accept client on port %d\n", portNumber);
@@ -66,15 +70,15 @@ public class Server {
 
     private class ClientHandler extends Thread {
         // Client information
-        private int userId;
+        public final int userId;
 
         // Socket and stream
         private Socket clientSocket;
         private ObjectInputStream readFromClient;
         private ObjectOutputStream writeToClient;
 
-        public ClientHandler(Socket clientSocket, int userId) {
-            this.userId = userId;
+        public ClientHandler(Socket clientSocket) {
+            this.userId = userIdCounter;
             this.clientSocket = clientSocket;
 
             // Open the inputstream on the client
@@ -85,6 +89,8 @@ public class Server {
                 System.err.printf("Error while opening streams for client!\n");
                 ioe.printStackTrace();
             }
+
+            userIdCounter++;
         }
 
         public <E extends Serializable> void sendMessage(Message<E> messageToSend) {
