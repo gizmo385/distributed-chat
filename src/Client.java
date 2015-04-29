@@ -24,6 +24,7 @@ public class Client {
     // Other information maintained by the client
     private String clientName;
     private Map<MessageType, List<MessageHandler>> handlers;
+    private MessageHandler defaultHandler;
 
     public Client(String clientName, String hostname, int portNumber) {
         this.clientName = clientName;
@@ -65,6 +66,17 @@ public class Client {
     }
 
     /**
+     * The default message handler will handle messages when no suitable handler can be found. If no
+     * default handler is present, an the message will be discarded.
+     *
+     * @param handler An implementation of the MessageHandler interface that will handle messages no
+     * handled by other handlers
+     */
+    public void setDefaultMessageHandler(MessageHandler handler) {
+        this.defaultHandler = handler;
+    }
+
+    /**
      * This will register an implementation of the MessageHandler interface as being able to handle
      * messages of a particular type.
      *
@@ -96,6 +108,8 @@ public class Client {
         if( this.handlers.containsKey(type) ) {
             List<MessageHandler> typeHandlers = this.handlers.get(type);
             typeHandlers.stream().forEach(h -> h.recieveMessage(message));
+        } else if( this.defaultHandler != null ) {
+            this.defaultHandler.recieveMessage(message);
         } else {
             System.err.printf("Received message with unhandled type: %s\n", type);
         }
