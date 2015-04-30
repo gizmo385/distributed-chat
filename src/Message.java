@@ -1,6 +1,9 @@
 import java.io.Serializable;
 
 public final class Message<E extends Serializable> implements Serializable {
+
+    private static final long serialVersionUID = 20L;
+
     private final String senderName;
     private final int destinationRoom;
     private final MessageType type;
