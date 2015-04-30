@@ -117,6 +117,7 @@ public class Server {
                     Message<String> disconnected = new Message<>("Server", room.getId(),
                             String.format("%s has disconnected from %s", this.clientName,
                                 room.getName()), MessageType.CHAT);
+                    disconnected.setSenderId(-1);
 
                     sendMessageToRoom(disconnected, room);
                 }
@@ -147,6 +148,8 @@ public class Server {
             // Create a message notifying the client that they have arrived
             Message<Integer> loginConfirmation = new Message<>("Server", -1, userId,
                     MessageType.LOGIN_NOTIFICATION);
+            loginConfirmation.setSenderId(-1);
+
             /*
              * Send login confirmation to the client and begin listening for messages on
              * a separate thread
@@ -162,6 +165,8 @@ public class Server {
             // Notify everyone of the new client
             Message<String> joinedMessage = new Message<>("Server", GLOBAL_ROOM_ID,
                     String.format("%s has joined the server!", clientName), MessageType.CHAT);
+
+            joinedMessage.setSenderId(-1);
 
             Room globalRoom = rooms.get(GLOBAL_ROOM_ID);
             sendMessageToRoom(joinedMessage, globalRoom);
