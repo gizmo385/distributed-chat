@@ -9,12 +9,23 @@ public final class Message<E extends Serializable> implements Serializable {
     private final MessageType type;
     private final E messageContents;
 
+    // This gets set by the server
+    private int senderId;
+
     public Message(String from, int destination, E contents, MessageType type) {
         this.senderName = from;
         this.destinationRoom = destination;
         this.messageContents = contents;
         this.type = type;
 
+    }
+
+    public void setSenderId(int senderId) {
+        this.senderId = senderId;
+    }
+
+    public int getSenderId() {
+        return this.senderId;
     }
 
     public String getSender() {
