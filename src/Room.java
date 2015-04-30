@@ -7,10 +7,12 @@ public class Room {
 
     // Information about the room
     private final int id;
+    private final String roomName;
     private Set<Integer> users;
 
-    public Room() {
+    public Room(String roomName) {
         this.id = globalRoomIdCounter;
+        this.roomName = roomName;
         globalRoomIdCounter++;
 
         this.users = new TreeSet<>();
@@ -18,6 +20,14 @@ public class Room {
 
     public void addUser(int userId) {
         this.users.add(userId);
+    }
+
+    public void removeUser(int userId) {
+        this.users.remove(userId);
+    }
+
+    public String getName() {
+        return this.roomName;
     }
 
     public Set<Integer> getUsers() {
