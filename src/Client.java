@@ -16,6 +16,7 @@ public class Client {
     private Socket socket;
     private String hostname;
     private int portNumber;
+    private int clientId;
 
     // Streaming information
     private ObjectOutputStream writeToServer;
@@ -55,10 +56,23 @@ public class Client {
             System.err.printf("Error openning streams to %s:%d\n", hostname, portNumber);
             ioe.printStackTrace();
         }
+
+        registerHandler(MessageType.LOGIN_NOTIFICATION, this::setClientId);
+    }
+
+    private <E extends Serializable> void setClientId(Message<E> message) {
+        if( message.getContents() instanceof Integer ) {
+            this.clientId = (Integer) message.getContents();
+        }
+    }
+
+    public int getClientId() {
+        return this.clientId;
     }
 
     public <E extends Serializable> void writeMessage( Message<E> message ) {
         try {
+            message.setSenderId(this.clientId);
             writeToServer.writeObject(message);
         } catch( IOException ioe ) {
             System.err.printf("Error writing message to %s:%d!\n", this.hostname, this.portNumber);
