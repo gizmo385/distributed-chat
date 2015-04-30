@@ -132,6 +132,19 @@ public class Server {
             // Add the client to the global room
             joinGlobalRoom(userId);
 
+            // Notify everyone of the new client
+            Message<String> joinedMessage = new Message<>("Server", GLOBAL_ROOM_ID,
+                    String.format("%s has joined the server!", clientName), MessageType.CHAT);
+
+            Room globalRoom = rooms.get(GLOBAL_ROOM_ID);
+            for( int userId : globalRoom.getUsers() ) {
+                ClientHandler handler = clientConnections.get(userId);
+
+                if( handler != null ) {
+                    handler.sendMessage(joinedMessage);
+                }
+            }
+
             // Block until we recieve a message
             while( true ) {
                 try {
