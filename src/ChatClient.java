@@ -38,6 +38,11 @@ public class ChatClient extends JFrame {
         initComponents();
 
         this.client = new Client(clientName, hostname, portNumber);
+        String connectionMessage = String.format("You have connected to %s:%d\n", hostname,
+                portNumber);
+
+        // Register some listeners
+        this.client.registerHandler(MessageType.LOGIN_NOTIFICATION, this::displayWelcome);
         this.client.registerHandler(MessageType.CHAT, this::displayMessage);
         this.client.registerHandler(MessageType.FILE, this::receiveFile);
     }
@@ -76,7 +81,7 @@ public class ChatClient extends JFrame {
         // Frame settings
         this.setSize(600, 700);
         this.setResizable(false);
-        this.setTitle("Chat Client");
+        this.setTitle("Chat Client - " + clientName);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         this.setLayout(new FlowLayout());
@@ -197,6 +202,11 @@ public class ChatClient extends JFrame {
      */
     private <E extends Serializable> void displayMessage(Message<E> message) {
         String toDisplay = String.format("%s: %s\n", message.getSender(), message.getContents());
+        SwingUtilities.invokeLater(() -> messageHistory.append(toDisplay));
+    }
+
+    private <E extends Serializable> void displayWelcome(Message<E> message) {
+        String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
         SwingUtilities.invokeLater(() -> messageHistory.append(toDisplay));
     }
 
