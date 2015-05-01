@@ -7,7 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 
 import java.util.List;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -102,10 +102,10 @@ public class Client {
         List<MessageHandler> typeHandlers = this.handlers.get(type);
 
         if( typeHandlers == null ) {
-            typeHandlers = Arrays.asList(listener);
-        } else {
-            typeHandlers.add(listener);
+            typeHandlers = new ArrayList<>();
         }
+
+        typeHandlers.add(listener);
 
         this.handlers.put(type, typeHandlers);
     }
@@ -148,8 +148,9 @@ public class Client {
 
                     notifyHandlers(message);
                 } catch( IOException ioe ) {
-                    System.err.printf("Error reading message from %s:%d\n", hostname, portNumber);
+                    System.err.println("There was an error while reading from the server!");
                     ioe.printStackTrace();
+                    System.exit(1);
                 } catch( ClassNotFoundException cnfe ) {
                     System.err.printf("Invalid message read from %s:%d\n", hostname, portNumber);
                     cnfe.printStackTrace();
