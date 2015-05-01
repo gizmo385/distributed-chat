@@ -23,7 +23,6 @@ public class Server {
     private Map<Integer, ClientHandler> clientConnections;
     private Map<Integer, Room> rooms;
 
-
     public Server(int portNumber) {
         this.portNumber = portNumber;
         this.clientConnections = new HashMap<>();
@@ -49,6 +48,9 @@ public class Server {
      * a user id to confirm that they are logged into the server.
      */
     public void startAccepting() {
+        System.out.printf("The server is now listening on %s:%d\n",
+                this.serverSocket.getInetAddress().getHostName(), portNumber);
+
         while( true ) {
             try {
                 // Wait until a new client has arrived
@@ -72,6 +74,9 @@ public class Server {
 
     public <E extends Serializable> void sendMessageToRoom( Message<E> message, Room room ) {
         if( room != null & message != null ) {
+            System.out.printf("%s -> %s [type = %s]: %s\n", message.getSender(),
+                    room.getName(), message.getType(), message.getContents());
+
             for( int userId : room.getUsers() ) {
                 ClientHandler ch = this.clientConnections.get(userId);
 
@@ -163,9 +168,11 @@ public class Server {
             joinGlobalRoom(userId);
 
             // Notify everyone of the new client
-            Message<String> joinedMessage = new Message<>("Server", GLOBAL_ROOM_ID,
-                    String.format("%s has joined the server!", clientName), MessageType.CHAT);
+            String joined = String.format("%s has joined the server!", clientName);
+            System.out.println(joined);
 
+            Message<String> joinedMessage = new Message<>("Server", GLOBAL_ROOM_ID, joined,
+                    MessageType.CHAT);
             joinedMessage.setSenderId(-1);
 
             Room globalRoom = rooms.get(GLOBAL_ROOM_ID);
