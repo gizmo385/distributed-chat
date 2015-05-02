@@ -31,9 +31,9 @@ public class ChatClient extends JFrame {
     private final int HEIGHT = 400;
     private JTextArea messageHistory;
     private JTextField messageToSend;
-    private JButton send, cancel, sendFile, startAudio, stopAudio;
+    private JButton send, cancel, sendFile;
 
-    private boolean listeningForAudio = false;
+    private boolean recordingAudio = false;
 
     /**
      * Creates a new chat client which will connect to the specified server.
@@ -85,26 +85,6 @@ public class ChatClient extends JFrame {
         sendFile = new JButton("Send File");
         sendFile.addActionListener(ae -> sendFile() );
         add(sendFile);
-
-        startAudio = new JButton("Start Audio");
-        startAudio.addActionListener(ae -> {
-            stopAudio.setEnabled(true);
-            startAudio.setEnabled(false);
-
-            listeningForAudio = true;
-            sendAudio();
-        });
-        add(startAudio);
-
-        stopAudio = new JButton("Stop Audio");
-        stopAudio.setEnabled(false);
-        stopAudio.addActionListener(ae -> {
-            startAudio.setEnabled(true);
-            stopAudio.setEnabled(false);
-
-            listeningForAudio = false;
-        });
-        add(stopAudio);
     }
 
     /**
@@ -118,6 +98,9 @@ public class ChatClient extends JFrame {
         this.setTitle("Chat Client - " + clientName);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+
+        KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        manager.addKeyEventDispatcher(new KeyDispatcher());
 
         this.setLayout(new FlowLayout());
     }
@@ -245,7 +228,7 @@ public class ChatClient extends JFrame {
             // Start recording in a separte thread
             Thread recordingThread = new Thread(() -> {
                 System.out.println("Starting recording...");
-                while( listeningForAudio ) {
+                while( recordingAudio ) {
                     int numBytesRead = microphone.read(data, 0, CHUNK_SIZE);
                     out.write(data, 0, numBytesRead);
                 }
@@ -274,6 +257,10 @@ public class ChatClient extends JFrame {
         if( message.getSenderId() == this.client.getClientId() ) {
             return;
         }
+
+        // Add to the message history that an audio message was recieved
+        String toDisplay = String.format("%s: [Audio Message]\n", message.getSender());
+        messageHistory.append(toDisplay);
 
         if( messageContents instanceof byte[] ) {
             byte[] audioData = (byte[]) messageContents;
@@ -319,6 +306,32 @@ public class ChatClient extends JFrame {
     private <E extends Serializable> void displayWelcome(Message<E> message) {
         String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
         SwingUtilities.invokeLater(() -> messageHistory.append(toDisplay));
+    }
+
+    /**
+     * This is dispatcher which will handle sending audio events for audio messages.
+     */
+    private class KeyDispatcher implements KeyEventDispatcher {
+        @Override
+        public boolean dispatchKeyEvent(KeyEvent e) {
+            // Ignore the event if it was fired by the message field
+            if( e.getSource() == messageToSend ) {
+                return false;
+            }
+
+            // Otherwise, check if it was a press or release
+            if (e.getID() == KeyEvent.KEY_PRESSED) {
+                // Ensure that the conditions are right to send an audio event
+                if( e.getKeyCode() == KeyEvent.VK_NUMPAD0 && (!recordingAudio) ) {
+                    recordingAudio = true;
+                    sendAudio();
+                }
+            } else if (e.getID() == KeyEvent.KEY_RELEASED && e.getKeyCode() == KeyEvent.VK_NUMPAD0) {
+                recordingAudio = false;
+            }
+
+            return false;
+        }
     }
 
     public static void main( String[] args ) {
