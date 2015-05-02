@@ -1,10 +1,19 @@
-import java.util.Scanner;
-
 import java.io.Serializable;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
+
+import java.util.Arrays;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,9 +27,13 @@ public class ChatClient extends JFrame {
     private Client client;
 
     // GUI Components
+    private final int WIDTH = 700;
+    private final int HEIGHT = 400;
     private JTextArea messageHistory;
     private JTextField messageToSend;
-    private JButton send, cancel, sendFile;
+    private JButton send, cancel, sendFile, startAudio, stopAudio;
+
+    private boolean listeningForAudio = false;
 
     /**
      * Creates a new chat client which will connect to the specified server.
@@ -45,6 +58,7 @@ public class ChatClient extends JFrame {
         this.client.registerHandler(MessageType.LOGIN_NOTIFICATION, this::displayWelcome);
         this.client.registerHandler(MessageType.CHAT, this::displayMessage);
         this.client.registerHandler(MessageType.FILE, this::receiveFile);
+        this.client.registerHandler(MessageType.AUDIO, this::receiveAudio);
     }
 
     /**
@@ -52,7 +66,7 @@ public class ChatClient extends JFrame {
      * action listeners, etc.
      */
     private void initComponents() {
-        messageHistory = new JTextArea(40, 40);
+        messageHistory = new JTextArea(20, 60);
         messageHistory.setEditable(false);
         add(messageHistory);
 
@@ -71,6 +85,26 @@ public class ChatClient extends JFrame {
         sendFile = new JButton("Send File");
         sendFile.addActionListener(ae -> sendFile() );
         add(sendFile);
+
+        startAudio = new JButton("Start Audio");
+        startAudio.addActionListener(ae -> {
+            stopAudio.setEnabled(true);
+            startAudio.setEnabled(false);
+
+            listeningForAudio = true;
+            sendAudio();
+        });
+        add(startAudio);
+
+        stopAudio = new JButton("Stop Audio");
+        stopAudio.setEnabled(false);
+        stopAudio.addActionListener(ae -> {
+            startAudio.setEnabled(true);
+            stopAudio.setEnabled(false);
+
+            listeningForAudio = false;
+        });
+        add(stopAudio);
     }
 
     /**
@@ -79,10 +113,11 @@ public class ChatClient extends JFrame {
      */
     private void initFrame() {
         // Frame settings
-        this.setSize(600, 700);
+        this.setSize(WIDTH, HEIGHT);
         this.setResizable(false);
         this.setTitle("Chat Client - " + clientName);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setLocationRelativeTo(null);
 
         this.setLayout(new FlowLayout());
     }
@@ -190,6 +225,82 @@ public class ChatClient extends JFrame {
                     MessageType.FILE);
 
             client.writeMessage(fileMessage);
+        }
+    }
+
+    private void sendAudio() {
+        try {
+            // Get the microphone
+            AudioFormat format = new AudioFormat(8000.0f, 16, 1, true, true);
+            DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+            TargetDataLine microphone = (TargetDataLine) AudioSystem.getLine(info);
+            microphone.open(format);
+
+            // Set up the output stream for the audio data
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            int CHUNK_SIZE = 1024;
+            byte[] data = new byte[microphone.getBufferSize() / 5];
+            microphone.start();
+
+            // Start recording in a separte thread
+            Thread recordingThread = new Thread(() -> {
+                System.out.println("Starting recording...");
+                while( listeningForAudio ) {
+                    int numBytesRead = microphone.read(data, 0, CHUNK_SIZE);
+                    out.write(data, 0, numBytesRead);
+                }
+                System.out.println("Finished recording...");
+
+                // Create new message
+                byte[] audio = out.toByteArray();
+                Message<byte[]> message = new Message<>(clientName, getCurrentRoom(), audio,
+                    MessageType.AUDIO);
+
+                System.out.println("Sending message...");
+                client.writeMessage(message);
+            });
+
+            recordingThread.start();
+        } catch( LineUnavailableException lue ) {
+            System.err.println("Error while reading audio!");
+            lue.printStackTrace();
+        }
+    }
+
+    private <E extends Serializable> void receiveAudio(Message<E> message) {
+        E messageContents = message.getContents();
+
+        // Don't play audio sent by me
+        if( message.getSenderId() == this.client.getClientId() ) {
+            return;
+        }
+
+        if( messageContents instanceof byte[] ) {
+            byte[] audioData = (byte[]) messageContents;
+
+            // Get the speakers
+            AudioFormat format = new AudioFormat(8000.0f, 16, 1, true, true);
+            DataLine.Info dataLineInfo = new DataLine.Info(SourceDataLine.class, format);
+            SourceDataLine speakers;
+
+            try {
+                speakers = (SourceDataLine) AudioSystem.getLine(dataLineInfo);
+                speakers.open(format);
+            } catch( LineUnavailableException lue ) {
+                System.err.println("There was an error getting the audio output line!");
+                lue.printStackTrace();
+                return;
+            }
+
+            // Create a thread to play the audio
+            Thread playThread = new Thread(() -> {
+                speakers.start();
+                speakers.write(audioData, 0, audioData.length);
+                speakers.drain();
+                speakers.stop();
+                speakers.close();
+            });
+            playThread.start();
         }
     }
 
