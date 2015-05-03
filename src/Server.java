@@ -139,8 +139,7 @@ public class Server {
         System.out.printf("%s(%d) created room %s\n", message.getSender(), message.getSenderId(), message.getContents());
         Room room = new Room((String)message.getContents());
         this.rooms.put(room.getId(), room);
-        String success_message = "Successfully created room " + room.getName();
-        Message<String> response = new Message<>(SERVER_NAME, SERVER_ID, success_message, MessageType.CREATE_ROOM_SUCCESS);
+        Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.CREATE_ROOM_SUCCESS);
         ClientHandler ch = clientConnections.get(message.getSenderId());
         ch.sendMessage(response);
     }

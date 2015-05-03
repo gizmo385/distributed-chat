@@ -15,6 +15,8 @@ import javax.sound.sampled.TargetDataLine;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ChatClient extends JFrame {
 
@@ -26,7 +28,8 @@ public class ChatClient extends JFrame {
     // GUI Components
     private final int WIDTH = 700;
     private final int HEIGHT = 400;
-    private JTextArea messageHistory;
+    private JTabbedPane roomsPane;
+    private Map<Integer,JTextArea> rooms;
     private JTextField messageToSend;
     private JButton send, cancel, sendFile;
 
@@ -64,9 +67,14 @@ public class ChatClient extends JFrame {
      * action listeners, etc.
      */
     private void initComponents() {
-        messageHistory = new JTextArea(20, 60);
+        rooms = new HashMap<>();
+        JTextArea messageHistory = new JTextArea(20, 60);
         messageHistory.setEditable(false);
-        add(messageHistory);
+        rooms.put(0, messageHistory);
+
+        roomsPane = new JTabbedPane(SwingConstants.TOP);
+        roomsPane.addTab("Global room", messageHistory);
+        add(roomsPane);
 
         messageToSend = new JTextField(15);
         messageToSend.addActionListener(ae -> sendStringMessage());
@@ -275,7 +283,7 @@ public class ChatClient extends JFrame {
 
         // Add to the message history that an audio message was recieved
         String toDisplay = String.format("%s: [Audio Message]\n", message.getSender());
-        messageHistory.append(toDisplay);
+        rooms.get(message.getDestination()).append(toDisplay);
 
         if( messageContents instanceof byte[] ) {
             byte[] audioData = (byte[]) messageContents;
@@ -315,17 +323,22 @@ public class ChatClient extends JFrame {
      */
     private <E extends Serializable> void displayMessage(Message<E> message) {
         String toDisplay = String.format("%s: %s\n", message.getSender(), message.getContents());
-        SwingUtilities.invokeLater(() -> messageHistory.append(toDisplay));
+        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
     }
 
     private <E extends Serializable> void displayWelcome(Message<E> message) {
         String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
-        SwingUtilities.invokeLater(() -> messageHistory.append(toDisplay));
+        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {
-        String contents = message.getContents().toString();
-        SwingUtilities.invokeLater(() -> messageHistory.append(contents));
+        JTextArea newRoom = new JTextArea();
+        newRoom.setEditable(false);
+
+        rooms.put(message.getDestination(), newRoom);
+        roomsPane.addTab(message.getContents().toString(), newRoom);
+        roomsPane.setSelectedComponent(rooms.get(message.getDestination()));
+        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append("Welcome to room " + message.getContents()));
     }
 
     /**
