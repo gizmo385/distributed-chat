@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -17,16 +19,21 @@ public class Server {
     // The room ID for the global chat room
     public final int GLOBAL_ROOM_ID;
 
+    // The ID for the server
+    public static final int SERVER_ID = -1;
+
     // Clients and rooms on the server
     private static int userIdCounter = 0;
     private static int roomId = 0;
     private Map<Integer, ClientHandler> clientConnections;
     private Map<Integer, Room> rooms;
+    private Map<MessageType, List<MessageHandler>> handlers;
 
     public Server(int portNumber) {
         this.portNumber = portNumber;
         this.clientConnections = new HashMap<>();
         this.rooms = new HashMap<>();
+        this.handlers = new HashMap<>();
 
         // Bind the server socket
         try {
@@ -37,10 +44,32 @@ public class Server {
             System.exit(1);
         }
 
+        registerHandler(MessageType.CREATE_ROOM, this::createRoom);
+
         // Create the global chat room that all users can join
         Room globalRoom = new Room("Global Room");
         GLOBAL_ROOM_ID = globalRoom.getId();
         this.rooms.put(GLOBAL_ROOM_ID, globalRoom);
+    }
+
+    /**
+     * This will register an implementation of the MessageHandler interface as being able to handle
+     * messages of a particular type.
+     *
+     * @param type The type of messages that this handler can work with
+     * @param listener Provides the handler function which will be called when a message of the
+     * specified type is received by the client.
+     */
+    public void registerHandler(MessageType type, MessageHandler listener) {
+        List<MessageHandler> typeHandlers = this.handlers.get(type);
+
+        if( typeHandlers == null ) {
+            typeHandlers = new ArrayList<>();
+        }
+
+        typeHandlers.add(listener);
+
+        this.handlers.put(type, typeHandlers);
     }
 
     /**
@@ -85,6 +114,29 @@ public class Server {
                 }
             }
         }
+    }
+
+    /**
+     * This will send a notification to all handlers that have registered themself as being able to
+     * handle messages of a particular type.
+     *
+     * @param message The message that has been received by the client
+     */
+    public <E extends Serializable> void notifyHandlers(Message<E> message) {
+        MessageType type = message.getType();
+
+        if( this.handlers.containsKey(type) ) {
+            List<MessageHandler> typeHandlers = this.handlers.get(type);
+            typeHandlers.stream().forEach(h -> h.recieveMessage(message));
+        } else {
+            System.err.printf("Received message with unhandled type: %s\n", type);
+        }
+    }
+
+    private <E extends Serializable> void createRoom(Message<E> message) {
+        System.out.printf("%s(%d) created room %s\n", message.getSender(), message.getSenderId(), message.getContents());
+        Room room = new Room((String)message.getContents());
+        this.rooms.put(room.getId(), room);
     }
 
     private class ClientHandler extends Thread {
@@ -183,16 +235,22 @@ public class Server {
                 try {
                     // Discover where the user is sending the message to
                     Message<?> messageRecieved = (Message<?>)this.readFromClient.readObject();
-                    Room destination = rooms.get(messageRecieved.getDestination());
+                    MessageType type = messageRecieved.getType();
+                    int destination = messageRecieved.getDestination();
 
-                    if( destination != null ) {
-                        sendMessageToRoom(messageRecieved, destination);
+                    if ( destination == SERVER_ID ) {
+                        notifyHandlers(messageRecieved);
                     } else {
-                        Message<String> errorMessage = new Message<>("Server", -1,
-                                String.format("%d is not a valid room id!",
-                                    messageRecieved.getDestination()), MessageType.ERROR);
+                        Room destinationRoom = rooms.get(destination);
+                        if( destinationRoom != null ) {
+                            sendMessageToRoom(messageRecieved, destinationRoom);
+                        } else {
+                            Message<String> errorMessage = new Message<>("Server", -1,
+                                    String.format("%d is not a valid room id!",
+                                            messageRecieved.getDestination()), MessageType.ERROR);
 
-                        writeToClient.writeObject(errorMessage);
+                            writeToClient.writeObject(errorMessage);
+                        }
                     }
                 } catch( IOException ioe ) {
                     disconnect(true);

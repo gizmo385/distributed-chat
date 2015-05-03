@@ -6,14 +6,11 @@ import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
-
-import java.util.Arrays;
 
 import javax.swing.*;
 import java.awt.*;
@@ -71,11 +68,11 @@ public class ChatClient extends JFrame {
         add(messageHistory);
 
         messageToSend = new JTextField(15);
-        messageToSend.addActionListener(ae -> sendChatMessage());
+        messageToSend.addActionListener(ae -> sendStringMessage());
         add(messageToSend);
 
         send = new JButton("Send");
-        send.addActionListener(ae -> sendChatMessage());
+        send.addActionListener(ae -> sendStringMessage());
         add(send);
 
         cancel = new JButton("Cancel");
@@ -118,16 +115,32 @@ public class ChatClient extends JFrame {
     /**
      * Sends a standard CHAT message containing the text present in the text field.
      */
-    private void sendChatMessage() {
+    private void sendStringMessage() {
         String message = this.messageToSend.getText();
         int currentRoom = getCurrentRoom();
 
         if( ! message.trim().isEmpty() ) {
-            Message<String> m = new Message<>(clientName, currentRoom, message, MessageType.CHAT);
-            this.client.writeMessage(m);
+            if ( message.startsWith("/") ) {
+                sendServerCommand(message.substring(1));
+            } else {
+                Message<String> m = new Message<>(clientName, currentRoom, message, MessageType.CHAT);
+                this.client.writeMessage(m);
+            }
         }
 
         this.messageToSend.setText("");
+    }
+
+    private void sendServerCommand(String message) {
+        String command = message.substring(0, message.indexOf(" "));
+        String contents = message.substring(message.indexOf(" ") + 1);
+        MessageType type = MessageType.getTypeFromCommand(command);
+        if ( type != null ) {
+            Message<String> m = new Message<>(clientName, Server.SERVER_ID, contents, type);
+            this.client.writeMessage(m);
+        } else {
+            displayMessage(new Message<>("Server", getCurrentRoom(), "Invalid command " + command, MessageType.ERROR));
+        }
     }
 
     /**

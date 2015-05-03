@@ -1,4 +1,17 @@
 public enum MessageType {
+    /*********************************************************
+     * SERVER COMMANDS
+     ********************************************************/
+
+    /**
+     * Creates a new room on the server
+     */
+    CREATE_ROOM("createroom"),
+
+    /*********************************************************
+     * CLIENT MESSAGES
+     ********************************************************/
+
     /**
      * Messages being sent between clients in the application. The payload of this message should
      * be a Stringable type (has a useful toString method).
@@ -39,4 +52,28 @@ public enum MessageType {
      * An authentication message is used in authenticating entry into a protected room.
      */
     AUTHENTICATION;
+
+    String commandString;
+
+    MessageType() {
+        commandString = "";
+    }
+
+    MessageType(String stringRepresentation) {
+        commandString = stringRepresentation;
+    }
+
+    public String getCommandString() {
+        return this.commandString;
+    }
+
+    public static MessageType getTypeFromCommand(String commandString) {
+        for ( MessageType type : MessageType.values() ) {
+            if ( type.getCommandString().equals(commandString) ) {
+                return type;
+            }
+        }
+        return null;
+    }
+
 }

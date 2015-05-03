@@ -17,7 +17,6 @@ public final class Message<E extends Serializable> implements Serializable {
         this.destinationRoom = destination;
         this.messageContents = contents;
         this.type = type;
-
     }
 
     public void setSenderId(int senderId) {
