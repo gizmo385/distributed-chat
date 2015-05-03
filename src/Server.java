@@ -105,8 +105,8 @@ public class Server {
 
     public <E extends Serializable> void sendMessageToRoom( Message<E> message, Room room ) {
         if( room != null & message != null ) {
-            System.out.printf("%s -> %s [type = %s]: %s\n", message.getSender(),
-                    room.getName(), message.getType(), message.getContents());
+            System.out.printf("%s -> %s(%d) [type = %s]: %s\n", message.getSender(),
+                    room.getName(), room.getId(), message.getType(), message.getContents());
 
             for( int userId : room.getUsers() ) {
                 ClientHandler ch = this.clientConnections.get(userId);
@@ -138,6 +138,7 @@ public class Server {
     private <E extends Serializable> void createRoom(Message<E> message) {
         System.out.printf("%s(%d) created room %s\n", message.getSender(), message.getSenderId(), message.getContents());
         Room room = new Room((String)message.getContents());
+        room.addUser(message.getSenderId());
         this.rooms.put(room.getId(), room);
         Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.CREATE_ROOM_SUCCESS);
         ClientHandler ch = clientConnections.get(message.getSenderId());

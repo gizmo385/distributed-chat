@@ -117,7 +117,12 @@ public class ChatClient extends JFrame {
      * @return The ID for the room that messages are currently being sent to.
      */
     private int getCurrentRoom() {
-        // TODO: Implement multiple rooms in the client
+        JTextArea room = (JTextArea) roomsPane.getSelectedComponent();
+        for (Map.Entry<Integer, JTextArea> roomEntry : rooms.entrySet() ) {
+            if ( roomEntry.getValue().equals(room) ) {
+                return roomEntry.getKey();
+            }
+        }
         return 0;
     }
 
@@ -323,6 +328,7 @@ public class ChatClient extends JFrame {
      */
     private <E extends Serializable> void displayMessage(Message<E> message) {
         String toDisplay = String.format("%s: %s\n", message.getSender(), message.getContents());
+        System.out.printf("Printing message to room " + message.getDestination());
         SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
     }
 
@@ -338,7 +344,7 @@ public class ChatClient extends JFrame {
         rooms.put(message.getDestination(), newRoom);
         roomsPane.addTab(message.getContents().toString(), newRoom);
         roomsPane.setSelectedComponent(rooms.get(message.getDestination()));
-        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append("Welcome to room " + message.getContents()));
+        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(String.format("Welcome to room %s\n", message.getContents())));
     }
 
     /**
