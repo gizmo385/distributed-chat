@@ -9,6 +9,32 @@ public enum MessageType {
     CREATE_ROOM("createroom"),
 
     /*********************************************************
+     * SERVER RESPONSES
+     ********************************************************/
+
+    /**
+     * Notifies the user that a room was created successfully
+     */
+    CREATE_ROOM_SUCCESS,
+
+    /**
+     * This is a message sent by the server that notifies clients that they have logged in
+     * successfully. It will send a user ID to the client as well.
+     */
+    LOGIN_NOTIFICATION,
+
+    /**
+     * These are messages sent by the server that notify clients of errors that have occured,
+     * potentially due to their input.
+     */
+    ERROR,
+
+    /**
+     * An authentication message is used in authenticating entry into a protected room.
+     */
+    AUTHENTICATION,
+
+    /*********************************************************
      * CLIENT MESSAGES
      ********************************************************/
 
@@ -34,24 +60,7 @@ public enum MessageType {
      * This is the type of message sent when a user is authenticating with the server. The payload
      * of this message is a String, representing the user's client name.
      */
-    LOGIN_INFORMATION,
-
-    /**
-     * This is a message sent by the server that notifies clients that they have logged in
-     * successfully. It will send a user ID to the client as well.
-     */
-    LOGIN_NOTIFICATION,
-
-    /**
-     * These are messages sent by the server that notify clients of errors that have occured,
-     * potentially due to their input.
-     */
-    ERROR,
-
-    /**
-     * An authentication message is used in authenticating entry into a protected room.
-     */
-    AUTHENTICATION;
+    LOGIN_INFORMATION;
 
     String commandString;
 

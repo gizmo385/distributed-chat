@@ -56,6 +56,7 @@ public class ChatClient extends JFrame {
         this.client.registerHandler(MessageType.CHAT, this::displayMessage);
         this.client.registerHandler(MessageType.FILE, this::receiveFile);
         this.client.registerHandler(MessageType.AUDIO, this::receiveAudio);
+        this.client.registerHandler(MessageType.CREATE_ROOM_SUCCESS, this::joinRoom);
     }
 
     /**
@@ -137,6 +138,7 @@ public class ChatClient extends JFrame {
         MessageType type = MessageType.getTypeFromCommand(command);
         if ( type != null ) {
             Message<String> m = new Message<>(clientName, Server.SERVER_ID, contents, type);
+            m.setSenderId(this.client.getClientId());
             this.client.writeMessage(m);
         } else {
             displayMessage(new Message<>("Server", getCurrentRoom(), "Invalid command " + command, MessageType.ERROR));
@@ -319,6 +321,11 @@ public class ChatClient extends JFrame {
     private <E extends Serializable> void displayWelcome(Message<E> message) {
         String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
         SwingUtilities.invokeLater(() -> messageHistory.append(toDisplay));
+    }
+
+    private <E extends Serializable> void joinRoom(Message<E> message) {
+        String contents = message.getContents().toString();
+        SwingUtilities.invokeLater(() -> messageHistory.append(contents));
     }
 
     /**

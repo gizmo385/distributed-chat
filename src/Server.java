@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.HashMap;
 
 public class Server {
+
+    private static final String SERVER_NAME = "Server";
     // Server information
     private ServerSocket serverSocket;
     private int portNumber;
@@ -137,6 +139,10 @@ public class Server {
         System.out.printf("%s(%d) created room %s\n", message.getSender(), message.getSenderId(), message.getContents());
         Room room = new Room((String)message.getContents());
         this.rooms.put(room.getId(), room);
+        String success_message = "Successfully created room " + room.getName();
+        Message<String> response = new Message<>(SERVER_NAME, SERVER_ID, success_message, MessageType.CREATE_ROOM_SUCCESS);
+        ClientHandler ch = clientConnections.get(message.getSenderId());
+        ch.sendMessage(response);
     }
 
     private class ClientHandler extends Thread {
