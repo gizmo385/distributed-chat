@@ -177,7 +177,7 @@ public class Server {
 
                 if( sendMessage ) {
                     // Notify all rooms that the user was in that this user has disconnected
-                    Message<String> disconnected = new Message<>("Server", room.getId(),
+                    Message<String> disconnected = new Message<>(SERVER_NAME, room.getId(),
                             String.format("%s has disconnected from %s", this.clientName,
                                 room.getName()), MessageType.CHAT);
                     disconnected.setSenderId(-1);
@@ -209,7 +209,7 @@ public class Server {
             }
 
             // Create a message notifying the client that they have arrived
-            Message<Integer> loginConfirmation = new Message<>("Server", GLOBAL_ROOM_ID, userId,
+            Message<Integer> loginConfirmation = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID, userId,
                     MessageType.LOGIN_NOTIFICATION);
             loginConfirmation.setSenderId(-1);
 
@@ -229,7 +229,7 @@ public class Server {
             String joined = String.format("%s has joined the server!", clientName);
             System.out.println(joined);
 
-            Message<String> joinedMessage = new Message<>("Server", GLOBAL_ROOM_ID, joined,
+            Message<String> joinedMessage = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID, joined,
                     MessageType.CHAT);
             joinedMessage.setSenderId(-1);
 
@@ -251,7 +251,7 @@ public class Server {
                         if( destinationRoom != null ) {
                             sendMessageToRoom(messageRecieved, destinationRoom);
                         } else {
-                            Message<String> errorMessage = new Message<>("Server", -1,
+                            Message<String> errorMessage = new Message<>(SERVER_NAME, -1,
                                     String.format("%d is not a valid room id!",
                                             messageRecieved.getDestination()), MessageType.ERROR);
 
