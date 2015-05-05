@@ -6,7 +6,7 @@ public class ClientSettings implements Serializable {
 
     private final static long serialVersionUID = 100L;
 
-    public transient static final ClientSettings DEFAULT = new ClientSettings(System.getProperty("user.name"), 50, 0, KeyEvent.VK_NUMPAD0, "localhost", 1212);
+    public transient static final ClientSettings DEFAULT = new ClientSettings(System.getProperty("user.name"), 50, 0, KeyEvent.VK_NUMPAD0, "localhost", 4002);
 
     // Connection settings
     private String hostname;
