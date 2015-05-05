@@ -1,9 +1,12 @@
 import java.io.Serializable;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -335,17 +338,30 @@ public class ChatClient extends JFrame {
     }
 
     public static void main( String[] args ) {
-        if( args.length < 3 ) {
-            System.err.println("Usage: java ChatClient <clientName> <hostname> <portNumber>");
-            System.exit(1);
+        ClientSettings settings;
+
+        if( args.length > 2 ) {
+            settings = ClientSettings.DEFAULT;
+            settings.setClientName(args[0]);
+            settings.setHostname(args[1]);
+            settings.setPortNumber(Integer.parseInt(args[2]));
+        } else {
+            settings = ClientSettings.loadSettings();
+
+            if( settings == ClientSettings.DEFAULT || settings == null) {
+
+                SettingsDialog dialog = new SettingsDialog(null);
+                dialog.setVisible(true);
+                settings = ClientSettings.loadSettings();
+            }
         }
 
-        // Read in command line arguments
-        String clientName = args[0];
-        String hostname = args[1];
-        int portNumber = Integer.parseInt(args[2]);
+        settings.setLastLoginDate(System.currentTimeMillis());
+        ClientSettings.saveSettings(settings);
 
-        ChatClient cc = new ChatClient(clientName, hostname, portNumber);
+        // Create the chat client
+        ChatClient cc = new ChatClient(settings.getClientName(), settings.getHostname(),
+                settings.getPortNumber());
         cc.setVisible(true);
     }
 }
