@@ -6,8 +6,7 @@ public class ClientSettings implements Serializable {
 
     private final static long serialVersionUID = 100L;
 
-    public transient static final ClientSettings DEFAULT = new ClientSettings("DEFAULT",
-            KeyEvent.VK_NUMPAD0, 50, 0, null, 0);
+    public transient static final ClientSettings DEFAULT = new ClientSettings(System.getProperty("user.name"), 50, 0, KeyEvent.VK_NUMPAD0, "localhost", 1212);
 
     // Connection settings
     private String hostname;
@@ -50,11 +49,7 @@ public class ClientSettings implements Serializable {
             ClientSettings settings = (ClientSettings) ois.readObject();
 
             return settings;
-        } catch( IOException ioe ) {
-            System.err.println("Error reading from settings file! Loading default settings!");
-        } catch( ClassNotFoundException cnfe ) {
-            System.err.println("settings.dat contains invalid data! Loading default settings!");
-        }
+        } catch(Exception e) { }
 
         return ClientSettings.DEFAULT;
     }
