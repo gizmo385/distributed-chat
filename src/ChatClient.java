@@ -25,9 +25,10 @@ import java.awt.event.*;
 public class ChatClient extends JFrame {
 
     // Chat client components
+    private Client client;
     private String clientName, hostname;
     private int portNumber;
-    private Client client;
+    private ClientSettings settings;
 
     // GUI Components
     private final int WIDTH = 700;
@@ -45,17 +46,17 @@ public class ChatClient extends JFrame {
      * @param hostname The IP address of the server you are connecting to
      * @param portNumber The port number that the server you are connecting to is listening on
      */
-    public ChatClient( String clientName, String hostname, int portNumber ) {
-        this.clientName = clientName;
-        this.hostname = hostname;
-        this.portNumber = portNumber;
+    public ChatClient( ClientSettings settings ) {
+        this.settings = settings;
+        this.clientName = settings.getClientName();
+        this.hostname = settings.getHostname();
+        this.portNumber = settings.getPortNumber();
 
         initFrame();
         initComponents();
 
         this.client = new Client(clientName, hostname, portNumber);
-        String connectionMessage = String.format("You have connected to %s:%d\n", hostname,
-                portNumber);
+        String connectionMessage = String.format("You have connected to %s:%d\n", hostname, portNumber);
 
         // Register some listeners
         this.client.registerHandler(MessageType.LOGIN_NOTIFICATION, this::displayWelcome);
@@ -325,7 +326,7 @@ public class ChatClient extends JFrame {
             // Otherwise, check if it was a press or release
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 // Ensure that the conditions are right to send an audio event
-                if( e.getKeyCode() == KeyEvent.VK_NUMPAD0 && (!recordingAudio) ) {
+                if( e.getKeyCode() == settings.getTouchToTalkKey() && (!recordingAudio) ) {
                     recordingAudio = true;
                     sendAudio();
                 }
@@ -360,8 +361,7 @@ public class ChatClient extends JFrame {
         ClientSettings.saveSettings(settings);
 
         // Create the chat client
-        ChatClient cc = new ChatClient(settings.getClientName(), settings.getHostname(),
-                settings.getPortNumber());
+        ChatClient cc = new ChatClient(settings);
         cc.setVisible(true);
     }
 }
