@@ -1,9 +1,12 @@
 import java.io.Serializable;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -21,9 +24,10 @@ import java.util.Map;
 public class ChatClient extends JFrame {
 
     // Chat client components
+    private Client client;
     private String clientName, hostname;
     private int portNumber;
-    private Client client;
+    private ClientSettings settings;
 
     // GUI Components
     private final int WIDTH = 700;
@@ -42,10 +46,11 @@ public class ChatClient extends JFrame {
      * @param hostname The IP address of the server you are connecting to
      * @param portNumber The port number that the server you are connecting to is listening on
      */
-    public ChatClient( String clientName, String hostname, int portNumber ) {
-        this.clientName = clientName;
-        this.hostname = hostname;
-        this.portNumber = portNumber;
+    public ChatClient( ClientSettings settings ) {
+        this.settings = settings;
+        this.clientName = settings.getClientName();
+        this.hostname = settings.getHostname();
+        this.portNumber = settings.getPortNumber();
 
         initFrame();
         initComponents();
@@ -367,11 +372,11 @@ public class ChatClient extends JFrame {
             // Otherwise, check if it was a press or release
             if (e.getID() == KeyEvent.KEY_PRESSED) {
                 // Ensure that the conditions are right to send an audio event
-                if( e.getKeyCode() == KeyEvent.VK_NUMPAD0 && (!recordingAudio) ) {
+                if( e.getKeyCode() == settings.getTouchToTalkKey() && (!recordingAudio) ) {
                     recordingAudio = true;
                     sendAudio();
                 }
-            } else if (e.getID() == KeyEvent.KEY_RELEASED && e.getKeyCode() == KeyEvent.VK_NUMPAD0) {
+            } else if (e.getID() == KeyEvent.KEY_RELEASED && e.getKeyCode() == settings.getTouchToTalkKey()) {
                 recordingAudio = false;
             }
 
@@ -380,17 +385,29 @@ public class ChatClient extends JFrame {
     }
 
     public static void main( String[] args ) {
-        if( args.length < 3 ) {
-            System.err.println("Usage: java ChatClient <clientName> <hostname> <portNumber>");
-            System.exit(1);
+        ClientSettings settings;
+
+        if( args.length > 2 ) {
+            settings = ClientSettings.DEFAULT;
+            settings.setClientName(args[0]);
+            settings.setHostname(args[1]);
+            settings.setPortNumber(Integer.parseInt(args[2]));
+        } else {
+            settings = ClientSettings.loadSettings();
+
+            if( settings == ClientSettings.DEFAULT || settings == null) {
+
+                SettingsDialog dialog = new SettingsDialog(null);
+                dialog.setVisible(true);
+                settings = ClientSettings.loadSettings();
+            }
         }
 
-        // Read in command line arguments
-        String clientName = args[0];
-        String hostname = args[1];
-        int portNumber = Integer.parseInt(args[2]);
+        settings.setLastLoginDate(System.currentTimeMillis());
+        ClientSettings.saveSettings(settings);
 
-        ChatClient cc = new ChatClient(clientName, hostname, portNumber);
+        // Create the chat client
+        ChatClient cc = new ChatClient(settings);
         cc.setVisible(true);
     }
 }
