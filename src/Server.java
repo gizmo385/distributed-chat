@@ -209,7 +209,7 @@ public class Server {
             }
 
             // Create a message notifying the client that they have arrived
-            Message<Integer> loginConfirmation = new Message<>("Server", -1, userId,
+            Message<Integer> loginConfirmation = new Message<>("Server", GLOBAL_ROOM_ID, userId,
                     MessageType.LOGIN_NOTIFICATION);
             loginConfirmation.setSenderId(-1);
 

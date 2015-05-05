@@ -328,7 +328,7 @@ public class ChatClient extends JFrame {
      */
     private <E extends Serializable> void displayMessage(Message<E> message) {
         String toDisplay = String.format("%s: %s\n", message.getSender(), message.getContents());
-        System.out.printf("Printing message to room " + message.getDestination());
+        System.out.printf("Printing message to room %s\n", message.getDestination());
         SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
     }
 
