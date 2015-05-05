@@ -13,15 +13,26 @@ public enum MessageType {
      ********************************************************/
 
     /**
-     * Notifies the user that a room was created successfully
+     * This message is sent to a client to notify them of a successful connection
      */
-    CREATE_ROOM_SUCCESS,
+    CONNECTION_SUCCESS,
 
     /**
      * This is a message sent by the server that notifies clients that they have logged in
-     * successfully. It will send a user ID to the client as well.
+     * successfully.
      */
-    LOGIN_NOTIFICATION,
+    LOGIN_SUCCESS,
+
+    /**
+     * This is a message sent by the server that notifies clients that their login was
+     * unsuccessful
+     */
+    LOGIN_FAILURE,
+
+    /**
+     * Notifies the user that a room was created successfully
+     */
+    CREATE_ROOM_SUCCESS,
 
     /**
      * These are messages sent by the server that notify clients of errors that have occured,

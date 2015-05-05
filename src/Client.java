@@ -33,6 +33,8 @@ public class Client {
         this.portNumber = portNumber;
         this.handlers = new HashMap<>();
 
+        registerHandler(MessageType.CONNECTION_SUCCESS, this::validateUsername);
+
         // Open the connection to the server
         try {
             this.socket = new Socket(hostname, portNumber);
@@ -44,11 +46,6 @@ public class Client {
             Thread readerThread = new Thread(reader);
             readerThread.start();
 
-            // Send client information to the server
-            Message<String> connectionInfo = new Message<>(clientName, -1, clientName,
-                    MessageType.LOGIN_INFORMATION);
-
-            writeMessage(connectionInfo);
         } catch( UnknownHostException uhe ) {
             System.err.printf("Could not connect to %s:%d\n", hostname, portNumber);
             uhe.printStackTrace();
@@ -56,8 +53,15 @@ public class Client {
             System.err.printf("Error openning streams to %s:%d\n", hostname, portNumber);
             ioe.printStackTrace();
         }
+    }
 
-        registerHandler(MessageType.LOGIN_NOTIFICATION, this::setClientId);
+    private <E extends Serializable> void validateUsername(Message<E> message) {
+        setClientId(message);
+
+        // Send client information to the server
+        Message<String> loginInfo = new Message<>(clientName, Server.SERVER_ID, clientName,
+                MessageType.LOGIN_INFORMATION);
+        writeMessage(loginInfo);
     }
 
     private <E extends Serializable> void setClientId(Message<E> message) {

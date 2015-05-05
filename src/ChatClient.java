@@ -51,11 +51,10 @@ public class ChatClient extends JFrame {
         initComponents();
 
         this.client = new Client(clientName, hostname, portNumber);
-        String connectionMessage = String.format("You have connected to %s:%d\n", hostname,
-                portNumber);
 
         // Register some listeners
-        this.client.registerHandler(MessageType.LOGIN_NOTIFICATION, this::displayWelcome);
+        this.client.registerHandler(MessageType.LOGIN_SUCCESS, this::displayWelcome);
+        this.client.registerHandler(MessageType.LOGIN_FAILURE, this::displayRetryDialog);
         this.client.registerHandler(MessageType.CHAT, this::displayMessage);
         this.client.registerHandler(MessageType.FILE, this::receiveFile);
         this.client.registerHandler(MessageType.AUDIO, this::receiveAudio);
@@ -89,7 +88,7 @@ public class ChatClient extends JFrame {
         add(cancel);
 
         sendFile = new JButton("Send File");
-        sendFile.addActionListener(ae -> sendFile() );
+        sendFile.addActionListener(ae -> sendFile());
         add(sendFile);
     }
 
@@ -335,6 +334,13 @@ public class ChatClient extends JFrame {
     private <E extends Serializable> void displayWelcome(Message<E> message) {
         String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
         SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
+    }
+
+    private <E extends Serializable> void displayRetryDialog(Message<E> message) {
+        String newUserId = JOptionPane.showInputDialog(this, message.getContents(), "Enter Username", JOptionPane.PLAIN_MESSAGE);
+        Message<String> newLogin = new Message<>(newUserId, Server.SERVER_ID, newUserId, MessageType.LOGIN_INFORMATION);
+        message.setSenderId(this.client.getClientId());
+        client.writeMessage(newLogin);
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {

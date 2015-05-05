@@ -30,12 +30,14 @@ public class Server {
     private Map<Integer, ClientHandler> clientConnections;
     private Map<Integer, Room> rooms;
     private Map<MessageType, List<MessageHandler>> handlers;
+    private List<String> clientUsernames;
 
     public Server(int portNumber) {
         this.portNumber = portNumber;
         this.clientConnections = new HashMap<>();
         this.rooms = new HashMap<>();
         this.handlers = new HashMap<>();
+        this.clientUsernames = new ArrayList<>();
 
         // Bind the server socket
         try {
@@ -46,6 +48,7 @@ public class Server {
             System.exit(1);
         }
 
+        registerHandler(MessageType.LOGIN_INFORMATION, this::loginUser);
         registerHandler(MessageType.CREATE_ROOM, this::createRoom);
 
         // Create the global chat room that all users can join
@@ -82,7 +85,7 @@ public class Server {
         System.out.printf("The server is now listening on %s:%d\n",
                 this.serverSocket.getInetAddress().getHostName(), portNumber);
 
-        while( true ) {
+        while ( true ) {
             try {
                 // Wait until a new client has arrived
                 Socket newClient = serverSocket.accept();
@@ -145,6 +148,11 @@ public class Server {
         ch.sendMessage(response);
     }
 
+    private <E extends Serializable> void loginUser(Message<E> message) {
+        ClientHandler ch = this.clientConnections.get(message.getSenderId());
+        ch.validate(message);
+    }
+
     private class ClientHandler extends Thread {
         // Client information
         public final int userId;
@@ -156,8 +164,11 @@ public class Server {
         private ObjectOutputStream writeToClient;
 
         public ClientHandler(Socket clientSocket) {
-            this.userId = userIdCounter;
+            this.userId = userIdCounter++;
             this.clientSocket = clientSocket;
+
+            // Add the client to the global client table
+            clientConnections.put(userId, this);
 
             // Open the inputstream on the client
             try {
@@ -167,8 +178,8 @@ public class Server {
                 System.err.printf("Error while opening streams for client!\n");
                 ioe.printStackTrace();
             }
-
-            userIdCounter++;
+            Message<Integer> connectionSuccess = new Message<>(SERVER_NAME, SERVER_ID, userId, MessageType.CONNECTION_SUCCESS);
+            sendMessage(connectionSuccess);
         }
 
         public void disconnect(boolean sendMessage) {
@@ -183,6 +194,7 @@ public class Server {
                     disconnected.setSenderId(-1);
 
                     sendMessageToRoom(disconnected, room);
+                    clientUsernames.remove(this.clientName);
                 }
             }
         }
@@ -196,45 +208,6 @@ public class Server {
         }
 
         public void run() {
-            // Wait for the new client to send in their connection information
-            try {
-                Message<?> connectionInfo = (Message<?>)this.readFromClient.readObject();
-                clientName = (String)connectionInfo.getContents();
-            } catch( IOException ioe ) {
-                System.err.printf("Error while getting connection info from the client!\n");
-                ioe.printStackTrace();
-            } catch( ClassNotFoundException cnfe ) {
-                System.err.printf("Connection info did not contain a string!\n");
-                cnfe.printStackTrace();
-            }
-
-            // Create a message notifying the client that they have arrived
-            Message<Integer> loginConfirmation = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID, userId,
-                    MessageType.LOGIN_NOTIFICATION);
-            loginConfirmation.setSenderId(-1);
-
-            /*
-             * Send login confirmation to the client and begin listening for messages on
-             * a separate thread
-             */
-            sendMessage(loginConfirmation);
-
-            // Add the client to the global client table
-            clientConnections.put(userId, this);
-
-            // Add the client to the global room
-            joinGlobalRoom(userId);
-
-            // Notify everyone of the new client
-            String joined = String.format("%s has joined the server!", clientName);
-            System.out.println(joined);
-
-            Message<String> joinedMessage = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID, joined,
-                    MessageType.CHAT);
-            joinedMessage.setSenderId(-1);
-
-            Room globalRoom = rooms.get(GLOBAL_ROOM_ID);
-            sendMessageToRoom(joinedMessage, globalRoom);
 
             // Block until we recieve a message
             while( true ) {
@@ -267,5 +240,44 @@ public class Server {
                 }
             }
         }
+
+        private <E extends Serializable> void validate(Message<E> connectionInfo) {
+            String clientName = (String)connectionInfo.getContents();
+
+            // Create message indicating either success or failure of validation
+            Message<?> loginResponse;
+            if ( clientUsernames.contains(clientName) ) {
+                String errorString = "Username already exists\nPlease try again";
+                loginResponse = new Message<>(SERVER_NAME, SERVER_ID, errorString,
+                        MessageType.LOGIN_FAILURE);
+                loginResponse.setSenderId(SERVER_ID);
+            } else {
+                this.clientName = clientName;
+                loginResponse = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID, userId,
+                        MessageType.LOGIN_SUCCESS);
+                loginResponse.setSenderId(SERVER_ID);
+                joinServer();
+            }
+
+            // Send the response created above
+            sendMessage(loginResponse);
+        }
+
+        private void joinServer() {
+            clientUsernames.add(clientName);
+            // Add the client to the global room
+            joinGlobalRoom(userId);
+
+            // Notify everyone of the new client
+            String joined = String.format("%s has joined the server!", clientName);
+            Message<String> joinedMessage = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID, joined,
+                    MessageType.CHAT);
+            joinedMessage.setSenderId(-1);
+
+            Room globalRoom = rooms.get(GLOBAL_ROOM_ID);
+            sendMessageToRoom(joinedMessage, globalRoom);
+        }
+
     }
+
 }
