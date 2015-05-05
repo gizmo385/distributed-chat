@@ -330,7 +330,7 @@ public class ChatClient extends JFrame {
                     recordingAudio = true;
                     sendAudio();
                 }
-            } else if (e.getID() == KeyEvent.KEY_RELEASED && e.getKeyCode() == KeyEvent.VK_NUMPAD0) {
+            } else if (e.getID() == KeyEvent.KEY_RELEASED && e.getKeyCode() == settings.getTouchToTalkKey()) {
                 recordingAudio = false;
             }
 

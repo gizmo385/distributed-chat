@@ -11,10 +11,10 @@ public class SettingsDialog extends JDialog implements DocumentListener {
 
     // Dialog settings
     private final int WIDTH = 300;
-    private final int HEIGHT = 250;
+    private final int HEIGHT = 300;
 
     // Components
-    private JTextField name, hostname, portNumber, messageBouncerLimit;
+    private JTextField name, hostname, portNumber, messageBouncerLimit, pttKey;
     private JButton save, exit;
     private JFrame parent;
 
@@ -80,6 +80,20 @@ public class SettingsDialog extends JDialog implements DocumentListener {
         bouncerLimitPanel.add(new JLabel("Bouncer Limit: "));
         bouncerLimitPanel.add(this.messageBouncerLimit);
 
+        // Entering the push-to-talk key
+        this.pttKey = new JTextField(15);
+        this.pttKey.setEditable(false);
+        this.pttKey.setText(KeyEvent.getKeyText(settings.getTouchToTalkKey()));
+        this.pttKey.addKeyListener( new KeyAdapter() {
+            @Override public void keyPressed(KeyEvent ke) {
+                settings.setTouchToTalkKey(ke.getKeyCode());
+                pttKey.setText(KeyEvent.getKeyText(ke.getKeyCode()));
+            }
+        });
+        JPanel pttPanel = new JPanel();
+        pttPanel.add(new JLabel("Push-to-talk key: "));
+        pttPanel.add(pttKey);
+
         // Dialog buttons
         JPanel buttonPanel = new JPanel();
         this.save = new JButton("Save and Exit");
@@ -107,6 +121,7 @@ public class SettingsDialog extends JDialog implements DocumentListener {
         add(hostnamePanel);
         add(portNumberPanel);
         add(bouncerLimitPanel);
+        add(pttPanel);
         add(buttonPanel);
     }
 
