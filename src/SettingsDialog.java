@@ -11,7 +11,7 @@ public class SettingsDialog extends JDialog implements DocumentListener {
 
     // Dialog settings
     private final int WIDTH = 300;
-    private final int HEIGHT = 300;
+    private final int HEIGHT = 250;
 
     // Components
     private JTextField name, hostname, portNumber, messageBouncerLimit;
