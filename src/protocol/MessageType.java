@@ -8,6 +8,11 @@ public enum MessageType {
      */
     CREATE_ROOM("createroom"),
 
+    /**
+     * Joins a room which has already been created
+     */
+    JOIN_ROOM("joinroom"),
+
     /*********************************************************
      * SERVER RESPONSES
      ********************************************************/
@@ -30,9 +35,14 @@ public enum MessageType {
     LOGIN_FAILURE,
 
     /**
-     * Notifies the user that a room was created successfully
+     * Notifies the user that a room can be joined
      */
-    CREATE_ROOM_SUCCESS,
+    JOIN_ROOM_SUCCESS,
+
+    /**
+     * Notifies the user that the room could not be joined (does not exist, private, etc.)
+     */
+    JOIN_ROOM_FAILURE,
 
     /**
      * These are messages sent by the server that notify clients of errors that have occured,

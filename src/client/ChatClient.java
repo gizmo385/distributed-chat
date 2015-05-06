@@ -57,13 +57,18 @@ public class ChatClient extends JFrame {
 
         this.client = new Client(clientName, hostname, portNumber);
 
-        // Register some listeners
+        // Login handlers
         this.client.registerHandler(MessageType.LOGIN_SUCCESS, this::displayWelcome);
         this.client.registerHandler(MessageType.LOGIN_FAILURE, this::displayRetryDialog);
+
+        // Communication message handlers
         this.client.registerHandler(MessageType.CHAT, this::displayMessage);
         this.client.registerHandler(MessageType.FILE, this::receiveFile);
         this.client.registerHandler(MessageType.AUDIO, this::receiveAudio);
-        this.client.registerHandler(MessageType.CREATE_ROOM_SUCCESS, this::joinRoom);
+
+        // Command reply messages
+        this.client.registerHandler(MessageType.JOIN_ROOM_SUCCESS, this::joinRoom);
+        this.client.registerHandler(MessageType.JOIN_ROOM_FAILURE, this::joinRoomFailure);
     }
 
     /**
@@ -339,6 +344,11 @@ public class ChatClient extends JFrame {
     private <E extends Serializable> void displayWelcome(Message<E> message) {
         String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
         SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
+    }
+
+    private <E extends Serializable> void joinRoomFailure(Message<E> message) {
+        String str = message.getContents().toString();
+        SwingUtilities.invokeLater(() -> rooms.get(getCurrentRoom()).append(str));
     }
 
     private <E extends Serializable> void displayRetryDialog(Message<E> message) {

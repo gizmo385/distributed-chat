@@ -50,6 +50,7 @@ public class Server {
 
         registerHandler(MessageType.LOGIN_INFORMATION, this::loginUser);
         registerHandler(MessageType.CREATE_ROOM, this::createRoom);
+        registerHandler(MessageType.JOIN_ROOM, this::joinRoom);
 
         // Create the global chat room that all users can join
         Room globalRoom = new Room("Global Room");
@@ -143,8 +144,44 @@ public class Server {
         Room room = new Room((String)message.getContents());
         room.addUser(message.getSenderId());
         this.rooms.put(room.getId(), room);
-        Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.CREATE_ROOM_SUCCESS);
+        Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.JOIN_ROOM_SUCCESS);
         ClientHandler ch = clientConnections.get(message.getSenderId());
+        ch.sendMessage(response);
+    }
+
+    private <E extends Serializable> void joinRoom(Message<E> message) {
+        Room roomToJoin;
+        Message<String> response;
+
+        // Get the sender and contents
+        ClientHandler ch = clientConnections.get(message.getSenderId());
+        E contents = message.getContents();
+
+        // Find the room
+        if( contents instanceof String) {
+            // Get the room being joined
+            int roomId = Integer.parseInt( (String)contents );
+            roomToJoin = this.rooms.get(roomId);
+
+            if( roomToJoin != null ) {
+                // Add the user
+                roomToJoin.addUser(message.getSenderId());
+                this.rooms.put(roomId, roomToJoin);
+
+                // Send the confirmation to the user
+                response = new Message<>(SERVER_NAME, roomId, roomToJoin.getName(), MessageType.JOIN_ROOM_SUCCESS);
+                System.out.printf("%s joined room %s(%d)\n", message.getSenderId(), roomToJoin.getName(), roomId);
+            } else {
+                // Create error message saying room couldn't be found
+                String str = String.format("Could not find room with id %d!", roomId);
+                response = new Message<>(SERVER_NAME, Message.SERVER_ID, str, MessageType.JOIN_ROOM_FAILURE);
+            }
+        } else {
+            // Handle invalid input from user
+            response = new Message<>(SERVER_NAME, roomId, "Must send room id!", MessageType.JOIN_ROOM_FAILURE);
+        }
+
+        // Send the response
         ch.sendMessage(response);
     }
 
