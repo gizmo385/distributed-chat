@@ -208,22 +208,24 @@ public class ChatClient extends JFrame {
                     "File Download", JOptionPane.YES_NO_OPTION);
 
             if( dialogAnswer == JOptionPane.YES_OPTION ) {
-                JFileChooser jfc = new JFileChooser();
-                int returnVal = jfc.showSaveDialog(this);
+                SwingUtilities.invokeLater(() -> {
+                    JFileChooser jfc = new JFileChooser();
+                    int returnVal = jfc.showSaveDialog(this);
 
-                // They must choose where to save the file
-                if( returnVal == JFileChooser.APPROVE_OPTION ) {
-                    File file = jfc.getSelectedFile();
+                    // They must choose where to save the file
+                    if( returnVal == JFileChooser.APPROVE_OPTION ) {
+                        File file = jfc.getSelectedFile();
 
-                    // Write the bytes to the file
-                    try(FileOutputStream fos = new FileOutputStream(file)) {
-                        fos.write((byte[]) messageContents);
-                        fos.flush();
-                    } catch( IOException ioe ) {
-                        JOptionPane.showMessageDialog(this, "Error saving file!", "Error!",
+                        // Write the bytes to the file
+                        try(FileOutputStream fos = new FileOutputStream(file)) {
+                            fos.write((byte[]) messageContents);
+                            fos.flush();
+                        } catch( IOException ioe ) {
+                            JOptionPane.showMessageDialog(this, "Error saving file!", "Error!",
                                 JOptionPane.ERROR_MESSAGE);
+                        }
                     }
-                }
+                });
             }
         } else {
             JOptionPane.showMessageDialog(this, "Message contents must contain file data!",
@@ -445,7 +447,7 @@ public class ChatClient extends JFrame {
 
                 System.out.println("Showing settings dialog");
                 SettingsDialog dialog = new SettingsDialog(null);
-                dialog.setVisible(true);
+                SwingUtilities.invokeLater(() -> dialog.setVisible(true));
                 settings = ClientSettings.loadSettings();
             }
         }
