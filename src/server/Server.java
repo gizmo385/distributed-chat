@@ -83,7 +83,7 @@ public class Server {
      * a user id to confirm that they are logged into the server.
      */
     public void startAccepting() {
-        System.out.printf("The server is now listening on %s:%d\n",
+        System.out.printf("Server -> The server is now listening on %s:%d\n",
                 this.serverSocket.getInetAddress().getHostName(), portNumber);
 
         while ( true ) {
@@ -117,6 +117,8 @@ public class Server {
 
                 if( ch != null ) {
                     ch.sendMessage(message);
+                } else {
+                    System.out.printf("Server -> No users in room %s", room.getName());
                 }
             }
         }
@@ -145,7 +147,7 @@ public class Server {
         this.rooms.put(room.getId(), room);
         Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.JOIN_ROOM_SUCCESS);
         ClientHandler ch = clientConnections.get(message.getSenderId());
-        System.out.printf("%s(%d) created room %s(%d)\n", message.getSender(), message.getSenderId(), message.getContents(), room.getId());
+        System.out.printf("Server -> %s(%d) created room %s(%d)\n", message.getSender(), message.getSenderId(), message.getContents(), room.getId());
         ch.sendMessage(response);
     }
 
@@ -187,7 +189,15 @@ public class Server {
 
                 // Send the confirmation to the user
                 response = new Message<>(SERVER_NAME, roomId, roomToJoin.getName(), MessageType.JOIN_ROOM_SUCCESS);
-                System.out.printf("%s(%d) joined room %s(%d)\n", message.getSender(), message.getSenderId(), roomToJoin.getName(), roomId);
+                System.out.printf("Server -> %s(%d) joined room %s(%d)\n", message.getSender(), message.getSenderId(), roomToJoin.getName(), roomId);
+
+                // Notify everyone of the new client
+                String joined = String.format("%s has joined the room %s!", ch.clientName, roomToJoin.getName());
+                Message<String> joinedMessage = new Message<>(SERVER_NAME, roomToJoin.getId(), joined,
+                        MessageType.CHAT);
+                joinedMessage.setSenderId(-1);
+
+                sendMessageToRoom(joinedMessage, roomToJoin);
             } else {
                 // Create error message saying room couldn't be found
                 String str = String.format("Could not find room with id %d!\n", roomId);
@@ -201,6 +211,9 @@ public class Server {
 
         // Send the response
         ch.sendMessage(response);
+
+
+
     }
 
     private <E extends Serializable> void leaveRoom(Message<E> message) {
@@ -209,15 +222,24 @@ public class Server {
             int senderId = message.getSenderId();
             room.removeUser(senderId);
             Message<Integer> leaveRoomMessage = new Message<>(SERVER_NAME, SERVER_ID, room.getId(), MessageType.LEAVE_ROOM_SUCCESS);
-            clientConnections.get(message.getSenderId()).sendMessage(leaveRoomMessage);
-            System.out.printf("%s(%d) has left room %s(%d)\n", message.getSender(), message.getSenderId(), room.getName(), room.getId());
-            if ( room.getUsers().size() == 0 ) {
+            ClientHandler client = clientConnections.get(message.getSenderId());
+            client.sendMessage(leaveRoomMessage);
+            System.out.printf("Server -> %s(%d) has left room %s(%d)\n", message.getSender(), message.getSenderId(), room.getName(), room.getId());
+            if (room.getUsers().size() == 0) {
                 rooms.remove(room.getId());
-                System.out.printf("Room %s is empty, removing\n", room.getName());
+                System.out.printf("Server -> Room %s is empty, removing\n", room.getName());
+            } else {
+                Message<String> disconnected = new Message<>(SERVER_NAME, room.getId(),
+                        String.format("%s has disconnected from %s", client.clientName,
+                                room.getName()), MessageType.CHAT);
+                disconnected.setSenderId(-1);
+                sendMessageToRoom(disconnected, room);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.out.printf("Improperly formatted message of type %s\n", message.getType());
+            String errorMessage = String.format("Improperly formatted leaveroom command 'leaveroom %s'", message.getContents());
+            Message<String> leaveRoomMessage = new Message<>(SERVER_NAME, SERVER_ID, errorMessage, MessageType.LEAVE_ROOM_FAILURE);
+            clientConnections.get(message.getSenderId()).sendMessage(leaveRoomMessage);
+            System.out.printf("Server -> Improperly formatted message of type %s from %s\n", message.getType(), clientConnections.get(message.getSenderId()).getName());
         }
     }
 
@@ -273,7 +295,7 @@ public class Server {
 
                 if ( room.getUsers().size() == 0 && room.getId() != GLOBAL_ROOM_ID ) {
                     iter.remove();
-                    System.out.printf("Room %s is empty, removing\n", room.getName());
+                    System.out.printf("Server -> Room %s is empty, removing\n", room.getName());
                 }
             }
         }

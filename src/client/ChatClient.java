@@ -398,7 +398,7 @@ public class ChatClient extends JFrame {
     }
 
     public <E extends Serializable> void leaveRoomFailure(Message<E> message) {
-
+        appendToRoom(String.format("%s: %s", message.getSender(), message.getContents()), getCurrentRoom());
     }
 
     /**
