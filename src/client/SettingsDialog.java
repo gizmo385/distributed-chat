@@ -25,6 +25,7 @@ public class SettingsDialog extends JDialog implements DocumentListener {
 
     public SettingsDialog(JFrame parent) {
         super(parent, "Settings", true);
+        System.out.println("Creating Settings dialog");
         this.done = false;
         this.parent = parent;
         this.settings = ClientSettings.loadSettings();

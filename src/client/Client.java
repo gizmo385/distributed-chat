@@ -34,7 +34,9 @@ public class Client {
         this.handlers = new HashMap<>();
 
         registerHandler(MessageType.CONNECTION_SUCCESS, this::validateUsername);
+    }
 
+    public void establishConnection() {
         // Open the connection to the server
         try {
             this.socket = new Socket(hostname, portNumber);
