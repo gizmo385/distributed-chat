@@ -160,8 +160,17 @@ public class ChatClient extends JFrame {
     }
 
     private void sendServerCommand(String message) {
-        String command = message.substring(0, message.indexOf(" "));
-        String contents = message.substring(message.indexOf(" ") + 1);
+        String command, contents;
+        int endOfCommandName = message.indexOf(" ");
+
+        if( endOfCommandName != -1 ) {
+            command = message.substring(0, endOfCommandName);
+            contents = message.substring(endOfCommandName + 1);
+        } else {
+            command = message;
+            contents = String.valueOf(getCurrentRoom());
+        }
+
         MessageType type = MessageType.getTypeFromCommand(command);
         if ( type != null ) {
             Message<String> m = new Message<>(clientName, Message.SERVER_ID, contents, type);
