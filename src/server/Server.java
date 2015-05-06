@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 public class Server {
 
@@ -51,6 +52,7 @@ public class Server {
         registerHandler(MessageType.LOGIN_INFORMATION, this::loginUser);
         registerHandler(MessageType.CREATE_ROOM, this::createRoom);
         registerHandler(MessageType.JOIN_ROOM, this::joinRoom);
+        registerHandler(MessageType.LIST_USERS, this::listUsers);
 
         // Create the global chat room that all users can join
         Room globalRoom = new Room("Global Room");
@@ -147,6 +149,23 @@ public class Server {
         Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.JOIN_ROOM_SUCCESS);
         ClientHandler ch = clientConnections.get(message.getSenderId());
         ch.sendMessage(response);
+    }
+
+    private <E extends Serializable> void listUsers(Message<E> message) {
+        try {
+            int roomId = Integer.parseInt((String) message.getContents());
+            Room room = this.rooms.get(roomId);
+
+            String users = room.getUsers().stream()
+                .map( i -> clientConnections.get(i) )
+                .map( ch -> ch.clientName )
+                .collect(Collectors.joining(", "));
+
+            Message<String> response = new Message<>(SERVER_NAME, room.getId(), users, MessageType.CHAT);
+            this.clientConnections.get(message.getSenderId()).sendMessage(response);
+        } catch( Exception e ) {
+
+        }
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {

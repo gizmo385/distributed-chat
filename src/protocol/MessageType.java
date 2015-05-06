@@ -13,6 +13,11 @@ public enum MessageType {
      */
     JOIN_ROOM("joinroom"),
 
+    /**
+     * Lists the users in the current room
+     */
+    LIST_USERS("listusers"),
+
     /*********************************************************
      * SERVER RESPONSES
      ********************************************************/
