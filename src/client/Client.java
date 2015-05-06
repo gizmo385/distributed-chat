@@ -59,7 +59,7 @@ public class Client {
         setClientId(message);
 
         // Send client information to the server
-        Message<String> loginInfo = new Message<>(clientName, Server.SERVER_ID, clientName,
+        Message<String> loginInfo = new Message<>(clientName, Message.SERVER_ID, clientName,
                 MessageType.LOGIN_INFORMATION);
         writeMessage(loginInfo);
     }

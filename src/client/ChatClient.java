@@ -154,7 +154,7 @@ public class ChatClient extends JFrame {
         String contents = message.substring(message.indexOf(" ") + 1);
         MessageType type = MessageType.getTypeFromCommand(command);
         if ( type != null ) {
-            Message<String> m = new Message<>(clientName, Server.SERVER_ID, contents, type);
+            Message<String> m = new Message<>(clientName, Message.SERVER_ID, contents, type);
             m.setSenderId(this.client.getClientId());
             this.client.writeMessage(m);
         } else {
@@ -343,7 +343,7 @@ public class ChatClient extends JFrame {
 
     private <E extends Serializable> void displayRetryDialog(Message<E> message) {
         String newUserId = JOptionPane.showInputDialog(this, message.getContents(), "Enter Username", JOptionPane.PLAIN_MESSAGE);
-        Message<String> newLogin = new Message<>(newUserId, Server.SERVER_ID, newUserId, MessageType.LOGIN_INFORMATION);
+        Message<String> newLogin = new Message<>(newUserId, Message.SERVER_ID, newUserId, MessageType.LOGIN_INFORMATION);
         message.setSenderId(this.client.getClientId());
         client.writeMessage(newLogin);
     }

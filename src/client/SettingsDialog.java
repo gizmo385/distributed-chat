@@ -148,10 +148,16 @@ public class SettingsDialog extends JDialog implements DocumentListener {
             }
         }
 
-        int bounceLimit = Integer.parseInt(messageBouncerLimit.getText());
-        int port = Integer.parseInt(portNumber.getText());
+        try {
+            int bounceLimit = Integer.parseInt(messageBouncerLimit.getText());
+            int port = Integer.parseInt(portNumber.getText());
 
-        if( bounceLimit < 0 || port < 0 ) {
+            if( bounceLimit < 0 || port < 0 ) {
+                this.save.setEnabled(false);
+                return;
+            }
+
+        } catch( NumberFormatException nfe ) {
             this.save.setEnabled(false);
             return;
         }
