@@ -129,6 +129,11 @@ public class ChatClient extends JFrame {
         return 0;
     }
 
+    private void appendToRoom(String message, int roomId) {
+        RoomPanel room = this.rooms.get(roomId);
+        SwingUtilities.invokeLater(() -> room.append(message));
+    }
+
     /**
      * Sends a standard CHAT message containing the text present in the text field.
      */
@@ -291,7 +296,7 @@ public class ChatClient extends JFrame {
 
         // Add to the message history that an audio message was recieved
         String toDisplay = String.format("%s: [Audio Message]\n", message.getSender());
-        rooms.get(message.getDestination()).append(toDisplay);
+        appendToRoom(toDisplay, message.getDestination());
 
         if( messageContents instanceof byte[] ) {
             byte[] audioData = (byte[]) messageContents;
@@ -332,12 +337,12 @@ public class ChatClient extends JFrame {
     private <E extends Serializable> void displayMessage(Message<E> message) {
         String toDisplay = String.format("%s: %s\n", message.getSender(), message.getContents());
         System.out.printf("Printing message to room %s\n", message.getDestination());
-        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
+        appendToRoom(toDisplay, message.getDestination());
     }
 
     private <E extends Serializable> void displayWelcome(Message<E> message) {
         String toDisplay = String.format("You have connected to %s:%d!\n", hostname, portNumber);
-        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(toDisplay));
+        appendToRoom(toDisplay, message.getDestination());
     }
 
     private <E extends Serializable> void displayRetryDialog(Message<E> message) {
@@ -348,12 +353,19 @@ public class ChatClient extends JFrame {
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {
-        RoomPanel newRoom = new RoomPanel(message.getDestination(), (int)(WIDTH * .95), (int)(HEIGHT * .7));
+        RoomPanel newRoom = rooms.get(message.getDestination());
 
-        rooms.put(message.getDestination(), newRoom);
-        roomsPane.addTab(message.getContents().toString(), newRoom);
+        // Only create the room entry if it doesn't already exist
+        if( newRoom == null ) {
+            newRoom = new RoomPanel(message.getDestination(), (int)(WIDTH * .95), (int)(HEIGHT * .7));
+            rooms.put(message.getDestination(), newRoom);
+            roomsPane.addTab(message.getContents().toString(), newRoom);
+        }
+
         roomsPane.setSelectedComponent(rooms.get(message.getDestination()));
-        SwingUtilities.invokeLater(() -> rooms.get(message.getDestination()).append(String.format("Welcome to room %s\n", message.getContents())));
+
+        String toDisplay = String.format("Welcome to room %s\n", message.getContents());
+        appendToRoom(toDisplay, message.getDestination());
     }
 
     /**
@@ -374,8 +386,11 @@ public class ChatClient extends JFrame {
                     recordingAudio = true;
                     sendAudio();
                 }
-            } else if (e.getID() == KeyEvent.KEY_RELEASED && e.getKeyCode() == settings.getTouchToTalkKey()) {
-                recordingAudio = false;
+            } else if (e.getID() == KeyEvent.KEY_RELEASED ) {
+                // Ensure that the right button has been released
+                if( e.getKeyCode() == settings.getTouchToTalkKey() ) {
+                    recordingAudio = false;
+                }
             }
 
             return false;
