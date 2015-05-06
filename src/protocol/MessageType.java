@@ -14,6 +14,11 @@ public enum MessageType {
     JOIN_ROOM("joinroom"),
 
     /**
+     * Joins a room which has already been created
+     */
+    LEAVE_ROOM("leaveroom"),
+
+    /**
      * Lists the users in the current room
      */
     LIST_USERS("listusers"),
@@ -48,6 +53,16 @@ public enum MessageType {
      * Notifies the user that the room could not be joined (does not exist, private, etc.)
      */
     JOIN_ROOM_FAILURE,
+
+    /**
+     * Notifies the user that a room can be joined
+     */
+    LEAVE_ROOM_SUCCESS,
+
+    /**
+     * Notifies the user that the room could not be joined (does not exist, private, etc.)
+     */
+    LEAVE_ROOM_FAILURE,
 
     /**
      * These are messages sent by the server that notify clients of errors that have occured,

@@ -6,10 +6,7 @@ import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Server {
@@ -52,6 +49,7 @@ public class Server {
         registerHandler(MessageType.LOGIN_INFORMATION, this::loginUser);
         registerHandler(MessageType.CREATE_ROOM, this::createRoom);
         registerHandler(MessageType.JOIN_ROOM, this::joinRoom);
+        registerHandler(MessageType.LEAVE_ROOM, this::leaveRoom);
         registerHandler(MessageType.LIST_USERS, this::listUsers);
 
         // Create the global chat room that all users can join
@@ -142,12 +140,12 @@ public class Server {
     }
 
     private <E extends Serializable> void createRoom(Message<E> message) {
-        System.out.printf("%s(%d) created room %s\n", message.getSender(), message.getSenderId(), message.getContents());
         Room room = new Room((String)message.getContents());
         room.addUser(message.getSenderId());
         this.rooms.put(room.getId(), room);
         Message<String> response = new Message<>(SERVER_NAME, room.getId(), room.getName(), MessageType.JOIN_ROOM_SUCCESS);
         ClientHandler ch = clientConnections.get(message.getSenderId());
+        System.out.printf("%s(%d) created room %s(%d)\n", message.getSender(), message.getSenderId(), message.getContents(), room.getId());
         ch.sendMessage(response);
     }
 
@@ -189,7 +187,7 @@ public class Server {
 
                 // Send the confirmation to the user
                 response = new Message<>(SERVER_NAME, roomId, roomToJoin.getName(), MessageType.JOIN_ROOM_SUCCESS);
-                System.out.printf("%s joined room %s(%d)\n", message.getSenderId(), roomToJoin.getName(), roomId);
+                System.out.printf("%s(%d) joined room %s(%d)\n", message.getSender(), message.getSenderId(), roomToJoin.getName(), roomId);
             } else {
                 // Create error message saying room couldn't be found
                 String str = String.format("Could not find room with id %d!\n", roomId);
@@ -203,6 +201,24 @@ public class Server {
 
         // Send the response
         ch.sendMessage(response);
+    }
+
+    private <E extends Serializable> void leaveRoom(Message<E> message) {
+        try {
+            Room room = this.rooms.get(Integer.parseInt(message.getContents().toString()));
+            int senderId = message.getSenderId();
+            room.removeUser(senderId);
+            Message<Integer> leaveRoomMessage = new Message<>(SERVER_NAME, SERVER_ID, room.getId(), MessageType.LEAVE_ROOM_SUCCESS);
+            clientConnections.get(message.getSenderId()).sendMessage(leaveRoomMessage);
+            System.out.printf("%s(%d) has left room %s(%d)\n", message.getSender(), message.getSenderId(), room.getName(), room.getId());
+            if ( room.getUsers().size() == 0 ) {
+                rooms.remove(room.getId());
+                System.out.printf("Room %s is empty, removing\n", room.getName());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.printf("Improperly formatted message of type %s\n", message.getType());
+        }
     }
 
     private <E extends Serializable> void loginUser(Message<E> message) {
@@ -240,7 +256,8 @@ public class Server {
         }
 
         public void disconnect(boolean sendMessage) {
-            for( Room room : rooms.values() ) {
+            for(Iterator<Room> iter = rooms.values().iterator(); iter.hasNext(); ) {
+                Room room = iter.next();
                 room.removeUser(this.userId);
 
                 if( sendMessage ) {
@@ -252,6 +269,11 @@ public class Server {
 
                     sendMessageToRoom(disconnected, room);
                     clientUsernames.remove(this.clientName);
+                }
+
+                if ( room.getUsers().size() == 0 && room.getId() != GLOBAL_ROOM_ID ) {
+                    iter.remove();
+                    System.out.printf("Room %s is empty, removing\n", room.getName());
                 }
             }
         }

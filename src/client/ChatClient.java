@@ -67,6 +67,8 @@ public class ChatClient extends JFrame {
         // Command reply messages
         this.client.registerHandler(MessageType.JOIN_ROOM_SUCCESS, this::joinRoom);
         this.client.registerHandler(MessageType.JOIN_ROOM_FAILURE, this::joinRoomFailure);
+        this.client.registerHandler(MessageType.LEAVE_ROOM_SUCCESS, this::leaveRoom);
+        this.client.registerHandler(MessageType.LEAVE_ROOM_FAILURE, this::leaveRoomFailure);
         //this.client.registerHandler(MessageType.CREATE_ROOM_SUCCESS, this::joinRoom);
 
         this.client.establishConnection();
@@ -386,6 +388,17 @@ public class ChatClient extends JFrame {
 
         String toDisplay = String.format("Welcome to room %s\n", message.getContents());
         appendToRoom(toDisplay, message.getDestination());
+    }
+
+    public <E extends Serializable> void leaveRoom(Message<E> message) {
+        if ( message.getContents() instanceof Integer ) {
+            RoomPanel rp = rooms.remove(message.getContents());
+            roomsPane.remove(rp);
+        }
+    }
+
+    public <E extends Serializable> void leaveRoomFailure(Message<E> message) {
+
     }
 
     /**
