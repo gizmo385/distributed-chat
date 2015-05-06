@@ -62,6 +62,8 @@ public class ChatClient extends JFrame {
         this.client.registerHandler(MessageType.FILE, this::receiveFile);
         this.client.registerHandler(MessageType.AUDIO, this::receiveAudio);
         this.client.registerHandler(MessageType.CREATE_ROOM_SUCCESS, this::joinRoom);
+
+        this.client.establishConnection();
     }
 
     /**
@@ -70,7 +72,7 @@ public class ChatClient extends JFrame {
      */
     private void initComponents() {
         rooms = new HashMap<>();
-        RoomPanel globalRoom = new RoomPanel(0);
+        RoomPanel globalRoom = new RoomPanel(0, (int)(WIDTH * .95), (int)(HEIGHT * .7));
         rooms.put(0, globalRoom);
 
         roomsPane = new JTabbedPane(SwingConstants.TOP);
@@ -101,6 +103,7 @@ public class ChatClient extends JFrame {
     private void initFrame() {
         // Frame settings
         this.setSize(WIDTH, HEIGHT);
+        this.setLayout(new FlowLayout());
         this.setResizable(false);
         this.setTitle("Chat Client - " + clientName);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -109,7 +112,6 @@ public class ChatClient extends JFrame {
         KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         manager.addKeyEventDispatcher(new KeyDispatcher());
 
-        this.setLayout(new FlowLayout());
     }
 
     /**
@@ -346,7 +348,7 @@ public class ChatClient extends JFrame {
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {
-        RoomPanel newRoom = new RoomPanel(message.getDestination());
+        RoomPanel newRoom = new RoomPanel(message.getDestination(), (int)(WIDTH * .95), (int)(HEIGHT * .7));
 
         rooms.put(message.getDestination(), newRoom);
         roomsPane.addTab(message.getContents().toString(), newRoom);
@@ -391,8 +393,9 @@ public class ChatClient extends JFrame {
         } else {
             settings = ClientSettings.loadSettings();
 
-            if( settings == ClientSettings.DEFAULT || settings == null) {
+            if( settings.equals(ClientSettings.DEFAULT) || settings == null) {
 
+                System.out.println("Showing settings dialog");
                 SettingsDialog dialog = new SettingsDialog(null);
                 dialog.setVisible(true);
                 settings = ClientSettings.loadSettings();
@@ -404,6 +407,6 @@ public class ChatClient extends JFrame {
 
         // Create the chat client
         ChatClient cc = new ChatClient(settings);
-        cc.setVisible(true);
+        SwingUtilities.invokeLater(() -> cc.setVisible(true));
     }
 }

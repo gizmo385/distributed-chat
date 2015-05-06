@@ -29,6 +29,21 @@ public class ClientSettings implements Serializable {
         this.portNumber = portNumber;
     }
 
+    @Override public boolean equals(Object o) {
+        if( o instanceof ClientSettings ) {
+            ClientSettings cs = (ClientSettings)o;
+
+            return this.clientName.equals(cs.clientName) &&
+                this.messageBouncerLimit == cs.messageBouncerLimit &&
+                this.lastLoginDate == cs.lastLoginDate &&
+                this.touchToTalkKey == cs.touchToTalkKey &&
+                this.hostname.equals(cs.hostname) &&
+                this.portNumber == cs.portNumber;
+        }
+
+        return false;
+    }
+
     public static void saveSettings(ClientSettings settings) {
         File settingsFile = new File("settings.dat");
 
