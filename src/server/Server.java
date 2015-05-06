@@ -158,7 +158,7 @@ public class Server {
         E contents = message.getContents();
 
         // Find the room
-        if( contents instanceof String) {
+        try {
             // Get the room being joined
             int roomId = Integer.parseInt( (String)contents );
             roomToJoin = this.rooms.get(roomId);
@@ -173,12 +173,13 @@ public class Server {
                 System.out.printf("%s joined room %s(%d)\n", message.getSenderId(), roomToJoin.getName(), roomId);
             } else {
                 // Create error message saying room couldn't be found
-                String str = String.format("Could not find room with id %d!", roomId);
+                String str = String.format("Could not find room with id %d!\n", roomId);
                 response = new Message<>(SERVER_NAME, Message.SERVER_ID, str, MessageType.JOIN_ROOM_FAILURE);
             }
-        } else {
+        } catch( Exception e ) {
             // Handle invalid input from user
-            response = new Message<>(SERVER_NAME, roomId, "Must send room id!", MessageType.JOIN_ROOM_FAILURE);
+            response = new Message<>(SERVER_NAME, roomId, "Must send a valid room id!\n",
+                    MessageType.JOIN_ROOM_FAILURE);
         }
 
         // Send the response
