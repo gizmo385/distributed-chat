@@ -33,7 +33,7 @@ public class ChatClient extends JFrame {
     private final int WIDTH = 700;
     private final int HEIGHT = 400;
     private JTabbedPane roomsPane;
-    private Map<Integer,JTextArea> rooms;
+    private Map<Integer,RoomPanel> rooms;
     private JTextField messageToSend;
     private JButton send, cancel, sendFile;
 
@@ -42,9 +42,7 @@ public class ChatClient extends JFrame {
     /**
      * Creates a new chat client which will connect to the specified server.
      *
-     * @param clientName The name associated with your messages
-     * @param hostname The IP address of the server you are connecting to
-     * @param portNumber The port number that the server you are connecting to is listening on
+     * settings ClientSettings object from which to draw connection settings
      */
     public ChatClient( ClientSettings settings ) {
         this.settings = settings;
@@ -72,12 +70,11 @@ public class ChatClient extends JFrame {
      */
     private void initComponents() {
         rooms = new HashMap<>();
-        JTextArea messageHistory = new JTextArea(20, 60);
-        messageHistory.setEditable(false);
-        rooms.put(0, messageHistory);
+        RoomPanel globalRoom = new RoomPanel(0);
+        rooms.put(0, globalRoom);
 
         roomsPane = new JTabbedPane(SwingConstants.TOP);
-        roomsPane.addTab("Global room", messageHistory);
+        roomsPane.addTab("Global room", globalRoom);
         add(roomsPane);
 
         messageToSend = new JTextField(15);
@@ -121,8 +118,8 @@ public class ChatClient extends JFrame {
      * @return The ID for the room that messages are currently being sent to.
      */
     private int getCurrentRoom() {
-        JTextArea room = (JTextArea) roomsPane.getSelectedComponent();
-        for (Map.Entry<Integer, JTextArea> roomEntry : rooms.entrySet() ) {
+        RoomPanel room = (RoomPanel) roomsPane.getSelectedComponent();
+        for (Map.Entry<Integer, RoomPanel> roomEntry : rooms.entrySet() ) {
             if ( roomEntry.getValue().equals(room) ) {
                 return roomEntry.getKey();
             }
@@ -349,8 +346,7 @@ public class ChatClient extends JFrame {
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {
-        JTextArea newRoom = new JTextArea();
-        newRoom.setEditable(false);
+        RoomPanel newRoom = new RoomPanel(message.getDestination());
 
         rooms.put(message.getDestination(), newRoom);
         roomsPane.addTab(message.getContents().toString(), newRoom);
