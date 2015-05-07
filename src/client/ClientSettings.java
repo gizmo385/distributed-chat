@@ -6,7 +6,7 @@ public class ClientSettings implements Serializable {
 
     private final static long serialVersionUID = 100L;
 
-    public transient static final ClientSettings DEFAULT = new ClientSettings(System.getProperty("user.name"), 50, 0, KeyEvent.VK_NUMPAD0, "localhost", 4002);
+    public transient static final ClientSettings DEFAULT = new ClientSettings(System.getProperty("user.name"), 0, KeyEvent.VK_NUMPAD0, "localhost", 4002);
 
     // Connection settings
     private String hostname;
@@ -17,12 +17,10 @@ public class ClientSettings implements Serializable {
     private int touchToTalkKey;
 
     // Bouncer settings
-    private int messageBouncerLimit;
     private long lastLoginDate;
 
-    public ClientSettings(String clientName, int messageBouncerLimit, long lastLoginDate, int touchToTalkKey, String hostname, int portNumber ) {
+    public ClientSettings(String clientName, long lastLoginDate, int touchToTalkKey, String hostname, int portNumber ) {
         this.clientName = clientName;
-        this.messageBouncerLimit = messageBouncerLimit;
         this.lastLoginDate = lastLoginDate;
         this.touchToTalkKey = touchToTalkKey;
         this.hostname = hostname;
@@ -34,7 +32,6 @@ public class ClientSettings implements Serializable {
             ClientSettings cs = (ClientSettings)o;
 
             return this.clientName.equals(cs.clientName) &&
-                this.messageBouncerLimit == cs.messageBouncerLimit &&
                 this.lastLoginDate == cs.lastLoginDate &&
                 this.touchToTalkKey == cs.touchToTalkKey &&
                 this.hostname.equals(cs.hostname) &&
@@ -78,10 +75,6 @@ public class ClientSettings implements Serializable {
         return this.touchToTalkKey;
     }
 
-    public int getMessageBouncerLimit() {
-        return this.messageBouncerLimit;
-    }
-
     public long getLastLoginDate() {
         return this.lastLoginDate;
     }
@@ -101,10 +94,6 @@ public class ClientSettings implements Serializable {
 
     public void setTouchToTalkKey(int touchToTalkKey) {
         this.touchToTalkKey = touchToTalkKey;
-    }
-
-    public void setMessageBouncerLimit(int messageBouncerLimit) {
-        this.messageBouncerLimit = messageBouncerLimit;
     }
 
     public void setLastLoginDate(long lastLoginDate) {

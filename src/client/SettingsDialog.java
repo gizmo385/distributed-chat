@@ -14,7 +14,7 @@ public class SettingsDialog extends JDialog implements DocumentListener {
     private final int HEIGHT = 300;
 
     // Components
-    private JTextField name, hostname, portNumber, messageBouncerLimit, pttKey;
+    private JTextField name, hostname, portNumber, pttKey;
     private JButton save, exit;
     private JFrame parent;
 
@@ -73,14 +73,6 @@ public class SettingsDialog extends JDialog implements DocumentListener {
         portNumberPanel.add(new JLabel("Port Number: "));
         portNumberPanel.add(this.portNumber);
 
-        // Entering in the max number of messages a bouncer will send you
-        this.messageBouncerLimit = new JFormattedTextField(onlyPositiveIntegers);
-        this.messageBouncerLimit.setColumns(15);
-        this.messageBouncerLimit.setText(String.valueOf(this.settings.getMessageBouncerLimit()));
-        JPanel bouncerLimitPanel = new JPanel();
-        bouncerLimitPanel.add(new JLabel("Bouncer Limit: "));
-        bouncerLimitPanel.add(this.messageBouncerLimit);
-
         // Entering the push-to-talk key
         this.pttKey = new JTextField(15);
         this.pttKey.setEditable(false);
@@ -115,13 +107,11 @@ public class SettingsDialog extends JDialog implements DocumentListener {
         setRequiredField(this.name);
         setRequiredField(this.hostname);
         setRequiredField(this.portNumber);
-        setRequiredField(this.messageBouncerLimit);
 
         // Add the jpanels
         add(namePanel);
         add(hostnamePanel);
         add(portNumberPanel);
-        add(bouncerLimitPanel);
         add(pttPanel);
         add(buttonPanel);
     }
@@ -130,7 +120,6 @@ public class SettingsDialog extends JDialog implements DocumentListener {
         settings.setClientName(this.name.getText());
         settings.setHostname(this.hostname.getText());
         settings.setPortNumber(Integer.parseInt(this.portNumber.getText()));
-        settings.setMessageBouncerLimit(Integer.parseInt(this.messageBouncerLimit.getText()));
     }
 
     private void setRequiredField(JTextField field) {
@@ -150,10 +139,9 @@ public class SettingsDialog extends JDialog implements DocumentListener {
         }
 
         try {
-            int bounceLimit = Integer.parseInt(messageBouncerLimit.getText());
             int port = Integer.parseInt(portNumber.getText());
 
-            if( bounceLimit < 0 || port < 0 ) {
+            if( port < 0 ) {
                 this.save.setEnabled(false);
                 return;
             }
