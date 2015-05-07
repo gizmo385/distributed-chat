@@ -18,19 +18,18 @@ public class RoomPanel extends JPanel {
 
     private void initComponents() {
         this.chatWindow = new JTextArea();
-        this.chatWindow.setPreferredSize(this.dimension);
-        this.chatWindow.setSize(this.dimension);
         this.chatWindow.setEditable(false);
         this.chatWindow.setLineWrap(true);
 
         this.scrollPane = new JScrollPane(chatWindow);
         this.scrollPane.setPreferredSize(this.dimension);
-        this.scrollPane.setSize(this.dimension);
         this.scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         this.add(scrollPane);
     }
 
     public void append(String message) {
         this.chatWindow.append(message);
+        JScrollBar sb = this.scrollPane.getVerticalScrollBar();
+        sb.setValue(sb.getMaximum());
     }
 }
