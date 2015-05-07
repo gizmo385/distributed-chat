@@ -447,7 +447,7 @@ public class ChatClient extends JFrame {
 
                 System.out.println("Showing settings dialog");
                 SettingsDialog dialog = new SettingsDialog(null);
-                SwingUtilities.invokeLater(() -> dialog.setVisible(true));
+                dialog.setVisible(true);
                 settings = ClientSettings.loadSettings();
             }
         }
