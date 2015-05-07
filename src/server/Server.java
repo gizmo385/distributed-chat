@@ -51,6 +51,7 @@ public class Server {
         registerHandler(MessageType.JOIN_ROOM, this::joinRoom);
         registerHandler(MessageType.LEAVE_ROOM, this::leaveRoom);
         registerHandler(MessageType.LIST_USERS, this::listUsers);
+        registerHandler(MessageType.LIST_ROOMS, this::listRooms);
 
         // Create the global chat room that all users can join
         Room globalRoom = new Room("Global Room");
@@ -152,6 +153,7 @@ public class Server {
     }
 
     private <E extends Serializable> void listUsers(Message<E> message) {
+        Message<String> response;
         try {
             int roomId = Integer.parseInt((String) message.getContents());
             Room room = this.rooms.get(roomId);
@@ -161,11 +163,30 @@ public class Server {
                 .map( ch -> ch.clientName )
                 .collect(Collectors.joining(", "));
 
-            Message<String> response = new Message<>(SERVER_NAME, room.getId(), users, MessageType.CHAT);
-            this.clientConnections.get(message.getSenderId()).sendMessage(response);
+            response = new Message<>(SERVER_NAME, roomId, users, MessageType.CHAT);
         } catch( Exception e ) {
-
+            response = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID,
+                    "/listusers does not take an argument!", MessageType.CHAT);
         }
+
+        this.clientConnections.get(message.getSenderId()).sendMessage(response);
+    }
+
+    private <E extends Serializable> void listRooms(Message<E> message) {
+        Message<String> response;
+        try {
+            int roomId = Integer.parseInt((String) message.getContents());
+            String rooms = this.rooms.values().stream()
+                .map(r -> String.format("%s(%d)", r.getName(), r.getId()))
+                .collect(Collectors.joining(", "));
+
+            response = new Message<>(SERVER_NAME, roomId, rooms, MessageType.CHAT);
+        } catch( Exception e ) {
+            response = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID,
+                    "/listrooms does not take an argument!", MessageType.CHAT);
+        }
+
+        this.clientConnections.get(message.getSenderId()).sendMessage(response);
     }
 
     private <E extends Serializable> void joinRoom(Message<E> message) {

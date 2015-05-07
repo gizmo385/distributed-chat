@@ -23,6 +23,11 @@ public enum MessageType {
      */
     LIST_USERS("listusers"),
 
+    /**
+     * Lists the currently active rooms in the server
+     */
+    LIST_ROOMS("listrooms"),
+
     /*********************************************************
      * SERVER RESPONSES
      ********************************************************/
