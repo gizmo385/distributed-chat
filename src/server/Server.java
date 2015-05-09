@@ -52,6 +52,7 @@ public class Server {
         registerHandler(MessageType.LEAVE_ROOM, this::leaveRoom);
         registerHandler(MessageType.LIST_USERS, this::listUsers);
         registerHandler(MessageType.LIST_ROOMS, this::listRooms);
+        registerHandler(MessageType.PRIVATE_MESSAGE, this::privateMessage);
 
         // Create the global chat room that all users can join
         Room globalRoom = new Room("Global Room");
@@ -172,6 +173,67 @@ public class Server {
         this.clientConnections.get(message.getSenderId()).sendMessage(response);
     }
 
+    private <E extends Serializable> void privateMessage(Message<E> message) {
+        ClientHandler sender = this.clientConnections.get(message.getSenderId());
+
+        // Verify that the sender exists
+        if( sender == null ) {
+            return;
+        }
+
+        try {
+            // Identify the recipient
+            ClientHandler recipient = null;
+            for( ClientHandler ch : this.clientConnections.values() ) {
+                if( ch.clientName.equals( message.getContents() ) ) {
+                    recipient = ch;
+                    break;
+                }
+            }
+
+            // Can't start a conversation with nobody
+            if( recipient == null ) {
+                Message<String> response = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID,
+                        "Can't pm nobody!!\n", MessageType.JOIN_ROOM_FAILURE);
+                sender.sendMessage(response);
+                return;
+            }
+
+            // Can't start a conversation with yourself
+            if( recipient.clientName.equals(sender.clientName) ) {
+                Message<String> response = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID,
+                        "Can't pm yourself!!\n", MessageType.JOIN_ROOM_FAILURE);
+                sender.sendMessage(response);
+                return;
+            }
+
+            // Create the room and add the users
+            String title = String.format("Conversation between %s and %s", sender.clientName,
+                    recipient.clientName);
+            Room room = new Room(title);
+            this.rooms.put(room.getId(), room);
+            room.addUser(sender.userId);
+            room.addUser(recipient.userId);
+
+            // Notify sender
+            Message<String> senderResponse = new Message<>(SERVER_NAME, room.getId(),
+                    String.format("conversation with %s", recipient.clientName),
+                    MessageType.JOIN_ROOM_SUCCESS);
+            sender.sendMessage(senderResponse);
+
+            // Notify recipient
+            Message<String> recipientResponse = new Message<>(SERVER_NAME, room.getId(),
+                    String.format("conversation with %s", sender.clientName),
+                    MessageType.JOIN_ROOM_SUCCESS);
+            recipient.sendMessage(recipientResponse);
+
+        } catch(Exception e) {
+            Message<String> response = new Message<>(SERVER_NAME, GLOBAL_ROOM_ID,
+                    "Could not start conversation!\n", MessageType.JOIN_ROOM_FAILURE);
+            sender.sendMessage(response);
+        }
+    }
+
     private <E extends Serializable> void listRooms(Message<E> message) {
         Message<String> response;
         try {
@@ -232,9 +294,6 @@ public class Server {
 
         // Send the response
         ch.sendMessage(response);
-
-
-
     }
 
     private <E extends Serializable> void leaveRoom(Message<E> message) {
