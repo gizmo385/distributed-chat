@@ -28,6 +28,11 @@ public enum MessageType {
      */
     LIST_ROOMS("listrooms"),
 
+    /**
+     * Starts a private conversation with someone
+     */
+    PRIVATE_MESSAGE("pm"),
+
     /*********************************************************
      * SERVER RESPONSES
      ********************************************************/
